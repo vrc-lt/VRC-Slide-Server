@@ -5,7 +5,7 @@ import           Web.Spock
 import           Web.Spock.Config
 import           Control.Monad.Trans
 import           Data.IORef
-import System.Environment
+import           System.Environment
 import qualified Data.Text                     as T
 
 data MySession = EmptySession
@@ -33,4 +33,4 @@ app = do
         redirect $ T.pack $ slides slidePage
 
 slides :: Int -> String
-slides page = undefined
+slides page = "https://speakerd.s3.amazonaws.com/presentations/88eb0ca81a99436997394b11a58c3fe4/preview_slide_" <> show page <>".jpg?373063"

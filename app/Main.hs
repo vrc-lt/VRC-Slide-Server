@@ -9,7 +9,7 @@ import           System.Environment
 import qualified Data.Text                     as T
 
 data MySession = EmptySession
-data MyAppState = CurrentSlideIndex (IORef Int)
+data MyAppState = DummyAppState (IORef Int)
 
 -- TODO: まとめて外部データソースに永続化する
 slideIds :: [String]
@@ -55,7 +55,7 @@ main = do
     envs <- getEnvironment
     let (_, port) = filter (\(key, _) -> key == "PORT") envs !! 0
     ref      <- newIORef 0
-    spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (CurrentSlideIndex ref)
+    spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (DummyAppState ref)
     runSpock (read port) (spock spockCfg app)
 
 app :: SpockM () MySession MyAppState ()

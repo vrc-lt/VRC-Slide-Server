@@ -7,7 +7,7 @@ steps:
 
 # Push
 - name: 'gcr.io/cloud-builders/docker'
-  args: ["push", "gcr.io/$PROJECT_ID/vr-match:$REVISION_ID"]
+  args: ["push", "gcr.io/$PROJECT_ID/vrc-slide-server:$REVISION_ID"]
 
 # Apply environment variable
 - name: 'loicmahieu/alpine-envsubst'

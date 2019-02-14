@@ -2,9 +2,11 @@ FROM fpco/stack-build:lts-12.26
 WORKDIR /usr/lib/gcc/x86_64-linux-gnu/5.4.0
 RUN cp crtbeginT.o crtbeginT.o.orig
 RUN cp crtbeginS.o crtbeginT.o
-ADD ./ /work
+ADD ./stack.yaml /work/stack.yaml
+ADD ./package.yaml /work/package.yaml
 WORKDIR /work
 RUN stack setup
+ADD ./app /work/app
 RUN stack --system-ghc --local-bin-path /sbin build --ghc-options '-optl-static -fPIC -optc-Os'
 
 FROM alpine:latest

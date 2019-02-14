@@ -20,8 +20,8 @@ slidePageNums = [13, 34]
 
 calcSlideId :: [(String, Int)] -> Int -> Maybe String
 calcSlideId ((slideId, count):xs) pageCount
-  | count < pageCount = calcSlideId xs (pageCount - count)
-  | count >= pageCount = Just slideId
+  | count <= pageCount = calcSlideId xs (pageCount - count)
+  | count > pageCount = Just slideId
 calcSlideId [] _ = Nothing
 
 getSlideId :: Int -> Maybe String
@@ -31,8 +31,8 @@ getSlideId slidePage =
 
 calcSlidePage :: [Int] -> Int -> Int
 calcSlidePage (count:xs) pageCount
-  | count < pageCount = calcSlidePage xs (pageCount - count)
-  | count >= pageCount = pageCount
+  | count <= pageCount = calcSlidePage xs (pageCount - count)
+  | count > pageCount = pageCount
 calcSlidePage [] _ = 0
 
 getSlidePage :: Int -> Int

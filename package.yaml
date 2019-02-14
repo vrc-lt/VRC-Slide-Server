@@ -16,11 +16,13 @@ dependencies:
   - text
 
 library:
-  source-dirs: app
+  source-dirs: src
 
 executable:
   main: Main.hs
-  source-dirs: app
+  source-dirs:
+    - app
+    - src
   dependencies: []
 
 tests:

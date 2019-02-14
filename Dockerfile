@@ -7,6 +7,7 @@ ADD ./package.yaml /work/package.yaml
 WORKDIR /work
 RUN stack setup
 ADD ./app /work/app
+ADD ./src /work/src
 RUN stack --system-ghc --local-bin-path /sbin build --ghc-options '-optl-static -fPIC -optc-Os'
 
 FROM alpine:latest

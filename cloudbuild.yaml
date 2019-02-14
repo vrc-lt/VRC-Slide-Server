@@ -31,3 +31,5 @@ steps:
     gcloud container clusters get-credentials alice --zone asia-northeast1-a
     kubectl apply -f deployment.yaml
     kubectl apply -f service.yaml
+
+timeout: 1200s

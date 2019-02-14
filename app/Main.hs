@@ -19,9 +19,9 @@ slidePageNums :: [Int]
 slidePageNums = [13, 34]
 
 calcSlideId :: [(String, Int)] -> Int -> Maybe String
-calcSlideId ((slideId, count):xs) refPageCount
-  | count < refPageCount = calcSlideId xs (refPageCount - count)
-  | count >= refPageCount = Just slideId
+calcSlideId ((slideId, count):xs) pageCount
+  | count < pageCount = calcSlideId xs (pageCount - count)
+  | count >= pageCount = Just slideId
 calcSlideId [] _ = Nothing
 
 getSlideId :: Int -> Maybe String
@@ -29,21 +29,14 @@ getSlideId slidePage =
   let slides = zip slideIds slidePageNums
   in calcSlideId slides slidePage
 
-calcSlidePage :: (Int, Int, Int) -> Int -> (Int, Int, Int)
-calcSlidePage prevSlide newSlide
-  | slidePage == 0 = (0, totalNum, slidePage)
-  | result /= 0 = (result, totalNum, slidePage)
-  | totalNum < slidePage = (0, totalNum, slidePage)
-  | otherwise = (slidePage - num, totalNum, slidePage)
-  where
-    (result, num, slidePage) = prevSlide
-    accNum = newSlide
-    totalNum = num + accNum
+calcSlidePage :: [Int] -> Int -> Int
+calcSlidePage (count:xs) pageCount
+  | count < pageCount = calcSlidePage xs (pageCount - count)
+  | count >= pageCount = pageCount
+calcSlidePage [] _ = 0
 
 getSlidePage :: Int -> Int
-getSlidePage slidePage =
-  let (result, _, _) = (foldl calcSlidePage (0, 0, slidePage) slidePageNums)
-  in result
+getSlidePage slidePage = calcSlidePage slidePageNums slidePage
 
 main :: IO ()
 main = do

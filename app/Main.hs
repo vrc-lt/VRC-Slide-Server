@@ -6,6 +6,7 @@ import           Web.Spock.Config
 import           Control.Monad.Trans
 import           Data.IORef
 import           System.Environment
+import           Slide.Util
 import qualified Data.Text                     as T
 
 data MySession = EmptySession
@@ -17,26 +18,6 @@ slideIds = ["88eb0ca81a99436997394b11a58c3fe4", "967f8a5f31cd4d6585e3f69c0031dd8
 
 slidePageNums :: [Int]
 slidePageNums = [13, 34]
-
-calcSlideId :: [(String, Int)] -> Int -> Maybe String
-calcSlideId ((slideId, count):xs) pageCount
-  | count <= pageCount = calcSlideId xs (pageCount - count)
-  | count > pageCount = Just slideId
-calcSlideId [] _ = Nothing
-
-getSlideId :: [String] -> [Int] -> Int -> Maybe String
-getSlideId slideIds slidePageNums slidePage =
-  let slides = zip slideIds slidePageNums
-  in calcSlideId slides slidePage
-
-calcSlidePage :: [Int] -> Int -> Int
-calcSlidePage (count:xs) pageCount
-  | count <= pageCount = calcSlidePage xs (pageCount - count)
-  | count > pageCount = pageCount
-calcSlidePage [] _ = 0
-
-getSlidePage :: [Int] ->Int -> Int
-getSlidePage slidePageNums slidePage = calcSlidePage slidePageNums slidePage
 
 main :: IO ()
 main = do

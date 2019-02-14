@@ -18,21 +18,16 @@ slideIds = ["88eb0ca81a99436997394b11a58c3fe4", "967f8a5f31cd4d6585e3f69c0031dd8
 slidePageNums :: [Int]
 slidePageNums = [13, 34]
 
-calcSlideId :: (String, Int, Int) -> (String, Int) -> (String, Int, Int)
-calcSlideId  prevSlide newSlide
-  | result /= "" = (result, totalNum, slidePage)
-  | totalNum < slidePage = ("", totalNum, slidePage)
-  | otherwise = (id, totalNum, slidePage)
-  where
-    (result, num, slidePage) = prevSlide
-    (id, accNum) = newSlide
-    totalNum = num + accNum
+calcSlideId' :: [(String, Int)] -> Int -> Maybe String
+calcSlideId' ((slideId, count):xs) refPageCount
+  | count < refPageCount = calcSlideId' xs (refPageCount - count)
+  | count >= refPageCount = Just slideId
+calcSlideId' [] _ = Nothing
 
-getSlideId :: Int -> String
-getSlideId slidePage =
+getSlideId' :: Int -> Maybe String
+getSlideId' slidePage =
   let slides = zip slideIds slidePageNums
-      (result, _, _) = (foldl calcSlideId ("", 0, slidePage) slides)
-  in result
+  in calcSlideId' slides slidePage
 
 calcSlidePage :: (Int, Int, Int) -> Int -> (Int, Int, Int)
 calcSlidePage prevSlide newSlide
@@ -62,7 +57,9 @@ app :: SpockM () MySession MyAppState ()
 app = do
     get root $ text "Hello World!"
     get ("slide" <//> var) $ \slidePage ->
-        let slideId = getSlideId slidePage
+        let slideId = case (getSlideId' slidePage) of
+                        Just x -> x
+                        Nothing -> slideIds !! 0
             page = getSlidePage slidePage
         in redirect $ T.pack $ toSlideLink slideId page
 

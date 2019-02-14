@@ -13,4 +13,4 @@ FROM alpine:latest
 RUN mkdir /work
 COPY --from=0 /work/.stack-work /work/.stack-work
 COPY --from=0 /work/.stack-work/install/x86_64-linux/lts-12.26/8.4.4/bin /work/
-CMD ["/work/spock"]
+CMD ["/work/vrc-slide-server"]

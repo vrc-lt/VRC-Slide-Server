@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: vrc-slide-server
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: vrc-slide-server
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - vrc-slide-server
+            topologyKey: "kubernetes.io/hostname"
+      containers:
+      - name: vrc-slide-server
+        image: gcr.io/${PROJECT_ID}/vrc-slide-server:${REVISION_ID}
+      env:
+      - name: PORT
+        value: "3000"
+      ports:
+      - containerPort: 3000

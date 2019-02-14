@@ -24,8 +24,8 @@ calcSlideId ((slideId, count):xs) pageCount
   | count > pageCount = Just slideId
 calcSlideId [] _ = Nothing
 
-getSlideId :: Int -> Maybe String
-getSlideId slidePage =
+getSlideId :: [String] -> [Int] -> Int -> Maybe String
+getSlideId slideIds slidePageNums slidePage =
   let slides = zip slideIds slidePageNums
   in calcSlideId slides slidePage
 
@@ -35,8 +35,8 @@ calcSlidePage (count:xs) pageCount
   | count > pageCount = pageCount
 calcSlidePage [] _ = 0
 
-getSlidePage :: Int -> Int
-getSlidePage slidePage = calcSlidePage slidePageNums slidePage
+getSlidePage :: [Int] ->Int -> Int
+getSlidePage slidePageNums slidePage = calcSlidePage slidePageNums slidePage
 
 main :: IO ()
 main = do
@@ -50,10 +50,10 @@ app :: SpockM () MySession MyAppState ()
 app = do
     get root $ text "Hello World!"
     get ("slide" <//> var) $ \slidePage ->
-        let slideId = case (getSlideId slidePage) of
+        let slideId = case (getSlideId slideIds slidePageNums slidePage) of
                         Just x -> x
                         Nothing -> slideIds !! 0
-            page = getSlidePage slidePage
+            page = getSlidePage slidePageNums slidePage
         in redirect $ T.pack $ toSlideLink slideId page
 
 toSlideLink :: String -> Int -> String

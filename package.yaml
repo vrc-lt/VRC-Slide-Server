@@ -19,3 +19,7 @@ executable:
   main: Main.hs
   source-dirs: app
   dependencies: []
+
+tests:
+  spec:
+    defaults: hspec/hspec@master

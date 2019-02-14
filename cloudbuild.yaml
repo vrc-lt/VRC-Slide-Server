@@ -32,4 +32,4 @@ steps:
     kubectl apply -f deployment.yaml
     kubectl apply -f service.yaml
 
-timeout: 1200s
+timeout: 1800s

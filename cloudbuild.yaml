@@ -35,3 +35,4 @@ steps:
 timeout: 1800s
 options:
   diskSizeGb: 100
+  machineType: 'N1_HIGHCPU_8'

@@ -22,8 +22,8 @@ spec:
       containers:
       - name: vrc-slide-server
         image: gcr.io/${PROJECT_ID}/vrc-slide-server:${REVISION_ID}
-      env:
-      - name: PORT
-        value: "3000"
-      ports:
-      - containerPort: 3000
+        env:
+        - name: PORT
+          value: "3000"
+        ports:
+        - containerPort: 3000

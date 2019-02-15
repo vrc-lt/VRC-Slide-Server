@@ -15,7 +15,20 @@ dependencies:
   - mtl
   - text
 
+library:
+  source-dirs: src
+
 executable:
   main: Main.hs
-  source-dirs: app
-  dependencies: []
+  source-dirs:
+    - app
+  dependencies:
+    - vrc-slide-server
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs: test
+    dependencies:
+      - hspec
+      - vrc-slide-server

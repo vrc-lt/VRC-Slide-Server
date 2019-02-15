@@ -22,8 +22,8 @@ executable:
   main: Main.hs
   source-dirs:
     - app
-    - src
-  dependencies: []
+  dependencies:
+    - vrc-slide-server
 
 tests:
   spec:

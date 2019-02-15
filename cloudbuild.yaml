@@ -33,3 +33,5 @@ steps:
     kubectl apply -f service.yaml
 
 timeout: 1800s
+options:
+  diskSizeGb: 100

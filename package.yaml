@@ -1,9 +1,9 @@
 name: vrc-slide-server
 version: 0.1.0
-synopsis: hoge
-description: piyo
+synopsis: A slide server for VRC_Panorama
+description: Please see README.md
 maintainer: haru2036
-github: TBD
+github: vrc-lt/VRC-Slide-Server
 category: Web
 extra-source-files: []
 

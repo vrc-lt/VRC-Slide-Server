@@ -21,8 +21,7 @@ slidePageNums = [13, 34]
 
 main :: IO ()
 main = do
-    envs <- getEnvironment
-    let (_, port) = filter (\(key, _) -> key == "PORT") envs !! 0
+    port <- getEnv "PORT"
     ref      <- newIORef 0
     spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (DummyAppState ref)
     runSpock (read port) (spock spockCfg app)

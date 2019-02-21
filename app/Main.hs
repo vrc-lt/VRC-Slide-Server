@@ -14,10 +14,10 @@ data MyAppState = DummyAppState (IORef Int)
 
 -- TODO: まとめて外部データソースに永続化する
 slideIds :: [String]
-slideIds = ["88eb0ca81a99436997394b11a58c3fe4", "967f8a5f31cd4d6585e3f69c0031dd8b"]
+slideIds = ["eb1e695c61a34f3a8cb365cde4461bf8", "f513c0c4b48b45d69dd43fe3611d24c6", "1ee303fc125842cabface3a8a00c5c8b"]
 
 slidePageNums :: [Int]
-slidePageNums = [13, 34]
+slidePageNums = [3, 9, 11]
 
 main :: IO ()
 main = do

@@ -9,11 +9,11 @@ import           Database.Persist.TH
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Slide
-    slideId String
-    slideCount Int 
+    sdid String
+    count Int 
     deriving Show
 Event
-    eventName String
+    name String
     slides [Slide]
     deriving Show
 |]

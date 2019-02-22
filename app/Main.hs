@@ -8,7 +8,6 @@ import           Web.Spock.Config
 import           Data.IORef
 import           System.Environment
 import           Slide.Util
-import           Database.Persist.Sql    hiding ( get )
 import           Database.Persist.Postgresql
                                          hiding ( get )
 import           Control.Monad.Logger
@@ -19,20 +18,12 @@ import Database.PostgreSQL.Simple.URL
 import Data.Maybe
 import Database.PostgreSQL.Simple.Internal
 import           Slide.Model
+import Network.HTTP.Types.Status
+import           Slide.Database
 
 data MySession = EmptySession
 data MyAppState = DummyAppState (IORef Int)
 
--- TODO: まとめて外部データソースに永続化する
-slideIds :: [String]
-slideIds =
-    [ "eb1e695c61a34f3a8cb365cde4461bf8"
-    , "f513c0c4b48b45d69dd43fe3611d24c6"
-    , "1ee303fc125842cabface3a8a00c5c8b"
-    ]
-
-slidePageNums :: [Int]
-slidePageNums = [3, 9, 11]
 
 main :: IO ()
 main = do
@@ -45,24 +36,27 @@ main = do
         $ runResourceT
         $ withPostgresqlConn connStr 
         $ runReaderT
-        $ runMigration migrateAll
+        $ do 
+            runMigration migrateAll 
+            -- イベントの編集ができるまで暫定対応
+            insertExampleEvent
     spockCfg <- defaultSpockCfg EmptySession (PCPool pool) (DummyAppState ref)
     runSpock (read port) (spock spockCfg app)
 
 app :: SpockM SqlBackend MySession MyAppState ()
 app = do
     get root $ text "Hello World!"
-    get ("slide" <//> var) $ \slidePage ->
-        let slideId = case (getSlideId slideIds slidePageNums slidePage) of
-                Just x  -> x
-                Nothing -> slideIds !! 0
-            page = getSlidePage slidePageNums slidePage
-        in  redirect $ T.pack $ toSlideLink slideId page
+    get ("slide" <//> var) $ \currentPageCount-> do
+        -- イベントの編集ができるまで暫定対応
+        mEvent <- getFirstEvent
+        case lookupSlidePage mEvent currentPageCount of
+            Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
+            Nothing -> setStatus notFound404
 
-toSlideLink :: String -> Int -> String
-toSlideLink slideId page =
-    "https://speakerd.s3.amazonaws.com/presentations/"
-        <> slideId
-        <> "/preview_slide_"
-        <> show page
-        <> ".jpg?373063"
+lookupSlidePage :: Maybe (Entity Event) -> Int -> Maybe (String, Int)
+lookupSlidePage mEvent currentPageCount = do 
+    entity <- mEvent
+    let slides = eventSlides $ entityVal entity
+    slideId <- getSlideId slides currentPageCount
+    let page = getSlidePage (map slideCount slides) currentPageCount
+    return (slideId, page)

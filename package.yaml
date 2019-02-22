@@ -23,6 +23,7 @@ dependencies:
   - resourcet
   - postgresql-simple-url
   - postgresql-simple
+  - http-types
 library:
   source-dirs: src
 executable:

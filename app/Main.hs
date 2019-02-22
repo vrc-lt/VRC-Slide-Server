@@ -8,7 +8,6 @@ import           Web.Spock.Config
 import           Data.IORef
 import           System.Environment
 import           Slide.Util
-import           Data.ByteString.Char8          ( pack )
 import           Database.Persist.Sql    hiding ( get )
 import           Database.Persist.Postgresql
                                          hiding ( get )
@@ -16,6 +15,9 @@ import           Control.Monad.Logger
 import qualified Data.Text                     as T
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.Resource
+import Database.PostgreSQL.Simple.URL
+import Data.Maybe
+import Database.PostgreSQL.Simple.Internal
 import           Slide.Model
 
 data MySession = EmptySession
@@ -35,13 +37,13 @@ slidePageNums = [3, 9, 11]
 main :: IO ()
 main = do
     port        <- getEnv "PORT"
-    databaseUrl <- getEnv "DATABASE_URL"
+    connStr <- getEnv "DATABASE_URL" >>= return . postgreSQLConnectionString . fromJust . parseDatabaseUrl
     ref         <- newIORef 0
-    pool        <- runStdoutLoggingT $ createPostgresqlPool (pack databaseUrl) 5
+    pool        <- runStdoutLoggingT $ createPostgresqlPool connStr 5
 
     runStdoutLoggingT
         $ runResourceT
-        $ withPostgresqlConn (pack databaseUrl)
+        $ withPostgresqlConn connStr 
         $ runReaderT
         $ runMigration migrateAll
     spockCfg <- defaultSpockCfg EmptySession (PCPool pool) (DummyAppState ref)

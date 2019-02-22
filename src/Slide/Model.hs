@@ -12,5 +12,9 @@ Slide
     slideId String
     slideCount Int 
     deriving Show
+Event
+    eventName String
+    slides [Slide]
+    deriving Show
 |]
 

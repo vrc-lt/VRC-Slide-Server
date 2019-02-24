@@ -53,10 +53,10 @@ app = do
             Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
             Nothing -> setStatus notFound404
 
-lookupSlidePage :: Maybe (Entity Event) -> Int -> Maybe (String, Int)
+lookupSlidePage :: Maybe Event -> Int -> Maybe (String, Int)
 lookupSlidePage mEvent currentPageCount = do 
-    entity <- mEvent
-    let slides = eventSlides $ entityVal entity
+    event <- mEvent
+    let slides = eventSlides event
     slideId <- getSlideId slides currentPageCount
     let page = getSlidePage (map slideCount slides) currentPageCount
     return (slideId, page)

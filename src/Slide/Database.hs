@@ -11,7 +11,7 @@ import           Slide.Model
 import           Slide.Util
 
 insertExampleEvent :: MonadIO m => ReaderT SqlBackend m ()
-insertExampleEvent = insertKey
+insertExampleEvent = repsert
     (toSqlKey 1)
     (Event
         "test"

@@ -48,7 +48,7 @@ app = do
     get root $ text "Hello World!"
     get ("slide" <//> var) $ \currentPageCount-> do
         -- イベントの編集ができるまで暫定対応
-        mEvent <- getFirstEvent
+        mEvent <- runSQL getFirstEvent
         case lookupSlidePage mEvent currentPageCount of
             Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
             Nothing -> setStatus notFound404

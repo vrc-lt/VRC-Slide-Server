@@ -6,6 +6,9 @@ import Control.Monad.Logger
 import Control.Monad.Trans.Resource
 import Web.Spock
 import Slide.Model
+import qualified Data.ByteString as BS
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 
 calcSlideId :: [Slide] -> Int -> Maybe String
 calcSlideId ((Slide slideId count):xs) pageCount

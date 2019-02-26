@@ -24,6 +24,9 @@ dependencies:
   - postgresql-simple-url
   - postgresql-simple
   - http-types
+  - bcrypt
+  - time
+  - hvect
 library:
   source-dirs: src
 executable:

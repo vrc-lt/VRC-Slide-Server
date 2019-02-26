@@ -23,7 +23,7 @@ Event
 User
     name Text 
     email Text 
-    password ByteString
+    password Text
     salt Text
     isAdmin Bool
     UniqueUserName name
@@ -31,8 +31,10 @@ User
     deriving Show
 
 Session
-     validUntil UTCTime
-     userId UserId
-     deriving Show
+    sessionId Text
+    validUntil UTCTime
+    userId UserId
+    UniqueSessionId sessionId
+    deriving Show
 |]
 

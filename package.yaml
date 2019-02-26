@@ -29,6 +29,10 @@ dependencies:
   - hvect
   - stache
   - aeson
+  - random
+  - word8
+  - cryptohash
+  - base16-bytestring
 library:
   source-dirs: src
 executable:

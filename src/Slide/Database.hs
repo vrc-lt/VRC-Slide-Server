@@ -2,11 +2,16 @@
 
 module Slide.Database where
 
+
+import           Web.Spock()
 import           Database.Persist
 import           Database.Persist.Sql
+import           Data.Text
 import           Control.Monad.Trans.Reader
 import           Control.Monad.IO.Class
+import Data.ByteString
 import           Slide.Model
+import           Data.Time
 
 insertExampleEvent :: MonadIO m => ReaderT SqlBackend m ()
 insertExampleEvent = do 
@@ -25,3 +30,22 @@ insertExampleEvent = do
 
 getFirstEvent :: MonadIO m => ReaderT SqlBackend m (Maybe Event)
 getFirstEvent = get $ toSqlKey 1
+
+getUserFromSessionId :: MonadIO m => Text -> ReaderT SqlBackend m (Maybe User)
+getUserFromSessionId sessionId = do
+    mSession <- getBy $ UniqueSessionId sessionId
+    case mSession of
+        Just session -> get $ sessionUserId $ entityVal session 
+        Nothing -> return Nothing
+
+findSession :: MonadIO m => Text -> ReaderT SqlBackend m (Maybe Session)
+findSession sessionId = do
+    mSession <- getBy $ UniqueSessionId sessionId
+    now <- liftIO getCurrentTime
+    case mSession of
+        Just sess -> 
+            if (sessionValidUntil $ entityVal sess) > now
+            then return $ Just $ entityVal sess
+            else return Nothing
+        Nothing -> return Nothing
+    

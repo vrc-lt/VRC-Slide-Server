@@ -6,6 +6,7 @@ import Control.Monad.Logger
 import Control.Monad.Trans.Resource
 import Web.Spock
 import Slide.Model
+import qualified Data.ByteString.Base16 as B16
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
@@ -33,6 +34,13 @@ runSQL action =
     runQuery $ \conn ->
         runResourceT $ runNoLoggingT $ runSqlConn action conn
 {-# INLINE runSQL #-}
+makeHex :: BS.ByteString -> T.Text
+makeHex = T.decodeUtf8 . B16.encode
+{-# INLINE makeHex #-}
+
+decodeHex :: T.Text -> BS.ByteString
+decodeHex = fst . B16.decode . T.encodeUtf8
+{-# INLINE decodeHex #-}
 
 toSlideLink :: String -> Int -> String
 toSlideLink slideId page =

@@ -27,6 +27,8 @@ dependencies:
   - bcrypt
   - time
   - hvect
+  - stache
+  - aeson
 library:
   source-dirs: src
 executable:

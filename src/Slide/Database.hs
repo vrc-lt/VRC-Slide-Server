@@ -31,7 +31,7 @@ insertExampleEvent = do
 getFirstEvent :: MonadIO m => ReaderT SqlBackend m (Maybe Event)
 getFirstEvent = get $ toSqlKey 1
 
-getUserFromSessionId :: MonadIO m => Text -> ReaderT SqlBackend m (Maybe User)
+{- getUserFromSessionId :: MonadIO m => Text -> ReaderT SqlBackend m (Maybe User)
 getUserFromSessionId sessionId = do
     mSession <- getBy $ UniqueSessionId sessionId
     case mSession of
@@ -47,5 +47,5 @@ findSession sessionId = do
             if (sessionValidUntil $ entityVal sess) > now
             then return $ Just $ entityVal sess
             else return Nothing
-        Nothing -> return Nothing
+        Nothing -> return Nothing -}
     

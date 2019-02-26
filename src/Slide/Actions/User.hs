@@ -35,8 +35,7 @@ hashPassword password salt =
 createSession :: UserId -> SqlPersistM SessionId
 createSession userId =
     do now <- liftIO getCurrentTime
-       gen <- liftIO getStdGen
-       insert (Session (T.decodeUtf8 $ randomBS 10 gen) (addUTCTime (5 * 3600) now) userId)
+       insert (Session (addUTCTime (5 * 3600) now) userId)
 
 killSessions :: UserId -> SqlPersistM ()
 killSessions userId =

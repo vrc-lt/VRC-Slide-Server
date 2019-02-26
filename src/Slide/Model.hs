@@ -31,10 +31,8 @@ User
     deriving Show
 
 Session
-    sessionId Text
     validUntil UTCTime
     userId UserId
-    UniqueSessionId sessionId
     deriving Show
 |]
 

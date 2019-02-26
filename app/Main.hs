@@ -31,7 +31,7 @@ import           Slide.Actions.User
 import Data.HVect
 import Crypto.BCrypt
 import           Slide.Types
-import           Web.Spock 
+import           Web.Spock hiding (SessionId)
 import           Web.Spock.Config
 
 
@@ -71,11 +71,24 @@ app = do
             credential <- findCredential
             case credential of
                 Nothing -> redirect "/login"
+                Just (username, password) -> 
+                     do loginRes <- runSQL $ loginUser username password
+                        case loginRes of
+                            Just userId ->
+                                do sid <- runSQL $ createSession userId
+                                   writeSession (Just sid)
+                                   redirect "/"
+                            Nothing -> redirect "/login"
+        get "register" $ html (render "register" (object []))
+        post "register" $ do
+            credential <- findCredential
+            case credential of
+                Nothing -> redirect "/register"
                 Just (username, password) -> do
-                    mUser <- runSQL $ loginUser username password
-                    case mUser of
-                        Just _ -> text "Login succeed."
-                        Nothing -> redirect "/login"
+                    result <- runSQL $ registerUser username "" password
+                    case result of
+                        Right _ -> text "Register succeed."
+                        Left _ -> redirect "/register"
         prehook authHook $ do
             prehook adminHook $ do
                 get "admin" $ text "admin panel"
@@ -109,12 +122,8 @@ maybeUser action =
          Nothing ->
              action Nothing
          Just sid ->
-             do mUser <- runSQL $ getUserFromSessionId sid
-                mSession <- runSQL $ findSession sid
-                case (mUser, mSession) of
-                    (Just user, Just session)-> 
-                        action $ Just (sessionUserId session, user)
-                    (_, _)-> action Nothing
+             do mUser <- runSQL $ loadUser sid
+                action mUser
 {- initHook :: Monad m => ActionCtxT () m (HVect '[])
 initHook = return HNil 
                 

@@ -1,9 +1,9 @@
 
 module Slide.Types where 
+import Slide.Model
 import Data.IORef
-import Data.Text
 import Database.Persist.Sql
-import Web.Spock
+import Web.Spock hiding(SessionId)
 
 type MySession = Maybe SessionId
 data MyAppState = DummyAppState (IORef Int)

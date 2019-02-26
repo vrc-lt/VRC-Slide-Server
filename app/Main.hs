@@ -124,38 +124,6 @@ maybeUser action =
          Just sid ->
              do mUser <- runSQL $ loadUser sid
                 action mUser
-{- initHook :: Monad m => ActionCtxT () m (HVect '[])
-initHook = return HNil 
-                
-data IsAdmin = IsAdmin
-
-adminHook :: (MonadIO m, ListContains n User xs) => ActionCtxT (HVect xs) m (HVect (IsAdmin ': xs))
-adminHook =
-    do oldCtx <- getContext
-       let user = findFirst oldCtx
-       if userIsAdmin user
-       then return (IsAdmin :&: oldCtx)
-       else text "Sorry, you are not administrator!"
-
-authHook :: AppAction (HVect xs) (HVect ((UserId, User) ': xs))
-authHook =
-    maybeUser $ \mUser ->
-    do oldCtx <- getContext
-       case mUser of
-         Nothing ->
-            text "Sorry, no access!"
-            noAccessPage "Unknown user. Login first!"
-         Just val ->
-             return (val :&: oldCtx)
-
-{- authHook :: MonadIO m => ActionCtxT (HVect xs) m (HVect (User ': xs))
-authHook =
-    do oldCtx <- getContext
-       sess <- readSession
-       mUser <- runSQL $ getUserFromSessionId sess
-       case mUser of
-           Nothing -> text "Sorry, no access!"
-           Just user -> return (user :&: oldCtx) -} -}
 
 findCredential :: MonadIO m => ActionCtxT ctx m (Maybe (T.Text, T.Text))
 findCredential = do

@@ -8,7 +8,6 @@ module Slide.Model where
 import           Database.Persist.TH
 import           Data.Text
 import           Data.Time
-import           Data.ByteString.Char8
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Slide

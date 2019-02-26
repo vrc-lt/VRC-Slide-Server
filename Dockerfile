@@ -9,6 +9,7 @@ ADD ./app /work/app
 ADD ./src /work/src
 ADD ./views /work/views
 # RUN stack --system-ghc --local-bin-path /sbin build --ghc-options '-optl-static -fPIC -optc-Os'
+RUN stack --system-ghc --local-bin-path /sbin build --only-dependencies
 RUN stack --system-ghc --local-bin-path /sbin build 
 
 FROM ubuntu:18.04

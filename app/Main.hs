@@ -32,6 +32,8 @@ import Data.HVect
 import Crypto.BCrypt
 import           Slide.Types
 import           Web.Spock hiding (SessionId)
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Class
 import           Web.Spock.Config
 
 
@@ -81,11 +83,11 @@ app = do
                             Nothing -> redirect "/login"
         get "register" $ html (render "register" (object []))
         post "register" $ do
-            credential <- findCredential
+            credential <- findNewUserInfo
             case credential of
                 Nothing -> redirect "/register"
-                Just (username, password) -> do
-                    result <- runSQL $ registerUser username "" password
+                Just (username, email, password) -> do
+                    result <- runSQL $ registerUser username email password
                     case result of
                         Right _ -> text "Register succeed."
                         Left _ -> redirect "/register"
@@ -130,6 +132,17 @@ findCredential = do
   username <- param "username"
   password <- param "password"
   pure $ (,) <$> username <*> password
+
+findNewUserInfo :: MonadIO m => ActionCtxT ctx m (Maybe (T.Text, T.Text, T.Text))
+findNewUserInfo = do
+  username <- param "username"
+  email <- param "email"
+  password <- param "password"
+  return $ do
+    un <- username
+    em <- email
+    ps <- password
+    return (un, em, ps)
 
 lookupSlidePage :: Maybe Event -> Int -> Maybe (String, Int)
 lookupSlidePage mEvent currentPageCount = do 

@@ -54,7 +54,9 @@ main = do
             -- イベントの編集ができるまで暫定対応
             insertExampleEvent
     spockCfg <- defaultSpockCfg (Nothing :: MySession) (PCPool pool) (DummyAppState ref)
-    runSpock (read port) (spock spockCfg app)
+    runSpock (read port) (spock (spockCfg {spc_csrfProtection = True
+        , spc_csrfHeaderName = "X-Csrf-Token"
+        , spc_csrfPostName = "__csrf_token"}) app)
 
 app :: SpockM SqlBackend MySession MyAppState ()
 app = do

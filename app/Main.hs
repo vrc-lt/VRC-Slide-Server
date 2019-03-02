@@ -19,7 +19,7 @@ import Control.Monad.IO.Class
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as TE
 import qualified Data.Text.Lazy as TL
-import Data.Aeson
+import Data.Aeson(object)
 import Text.Mustache
 import Database.PostgreSQL.Simple.URL
 import Data.Maybe
@@ -94,6 +94,16 @@ app = do
         prehook authHook $ do
             prehook adminHook $ do
                 get "admin" $ text "admin panel"
+                get ("api" <//> "events") $ do
+                    events <- runSQL findEvents
+                    json $ map entityVal events
+                get ("api" <//> "events" <//> var) $ \eventId -> do
+                    event <- runSQL $ getEventById $ UniqueEvent eventId
+                    case event of
+                        Just entity -> json entity
+                        Nothing -> setStatus notFound404
+
+
 
 baseHook :: AppAction () (HVect '[])
 baseHook = return HNil

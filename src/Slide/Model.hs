@@ -4,19 +4,23 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Slide.Model where
 import           Database.Persist.TH
 import           Data.Text
 import           Data.Time
+import           Data.Aeson()
+
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-Slide
+Slide json
     sdid String
     count Int 
     deriving Show
-Event
+Event json
     name String
     slides [Slide]
+    UniqueEvent name
     deriving Show
 
 User

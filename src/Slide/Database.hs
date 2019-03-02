@@ -31,21 +31,8 @@ insertExampleEvent = do
 getFirstEvent :: MonadIO m => ReaderT SqlBackend m (Maybe Event)
 getFirstEvent = get $ toSqlKey 1
 
-{- getUserFromSessionId :: MonadIO m => Text -> ReaderT SqlBackend m (Maybe User)
-getUserFromSessionId sessionId = do
-    mSession <- getBy $ UniqueSessionId sessionId
-    case mSession of
-        Just session -> get $ sessionUserId $ entityVal session 
-        Nothing -> return Nothing
+findEvents :: MonadIO m => ReaderT SqlBackend m [Entity Event]
+findEvents = selectList [] []
 
-findSession :: MonadIO m => Text -> ReaderT SqlBackend m (Maybe Session)
-findSession sessionId = do
-    mSession <- getBy $ UniqueSessionId sessionId
-    now <- liftIO getCurrentTime
-    case mSession of
-        Just sess -> 
-            if (sessionValidUntil $ entityVal sess) > now
-            then return $ Just $ entityVal sess
-            else return Nothing
-        Nothing -> return Nothing -}
-    
+getEventById :: MonadIO m => Unique Event -> ReaderT SqlBackend m (Maybe (Entity Event))
+getEventById = getBy

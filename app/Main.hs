@@ -10,7 +10,8 @@ import           Data.IORef
 import           System.Environment
 import Network.HTTP.Types.Status
 import           Database.Persist.Postgresql
-                                         hiding ( get )
+                                         hiding ( get, getBy )
+import           Database.Persist ( getBy )
 import           Control.Monad
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Reader
@@ -54,9 +55,10 @@ main = do
             -- イベントの編集ができるまで暫定対応
             insertExampleEvent
     spockCfg <- defaultSpockCfg (Nothing :: MySession) (PCPool pool) (DummyAppState ref)
-    runSpock (read port) (spock (spockCfg {spc_csrfProtection = True
+    runSpock (read port) (spock spockCfg app)
+{-     runSpock (read port) (spock (spockCfg {spc_csrfProtection = True
         , spc_csrfHeaderName = "X-Csrf-Token"
-        , spc_csrfPostName = "__csrf_token"}) app)
+        , spc_csrfPostName = "__csrf_token"}) app) -}
 
 app :: SpockM SqlBackend MySession MyAppState ()
 app = do
@@ -96,6 +98,19 @@ app = do
                         case result of
                             Right _ -> text "Register succeed."
                             Left _ -> redirect "/register"
+            post ("api" <//> "login") $ do
+                credential <- findCredential
+                case credential of
+                    Nothing -> redirect "/login"
+                    Just (username, password) -> 
+                        do loginRes <- runSQL $ loginUser username password
+                           case loginRes of
+                               Just userId ->
+                                   do sid <- runSQL $ createSession userId
+                                      writeSession (Just sid)
+                                      setStatus ok200
+                               Nothing -> redirect "/login"
+
             prehook authHook $ do
                 prehook adminHook $ do
                     get "admin" $ text "admin panel"
@@ -107,12 +122,25 @@ app = do
                         case event of
                             Just entity -> json entity
                             Nothing -> setStatus notFound404
+                    post ("api" <//> "events" <//> var <//> "update") $ \eventId -> do
+                        mbody <- jsonBody
+                        case mbody of
+                            Just body -> do 
+                                runSQL $ do 
+                                    mevent <- getBy $ UniqueEvent eventId
+                                    case mevent of
+                                        Just entityEvent -> do
+                                            replace (entityKey entityEvent) body
+                                setStatus ok200
+                            Nothing -> setStatus notFound404
 
+                            
 
 corsHeader =
   do ctx <- getContext
-     setHeader "Access-Control-Allow-Origin" "*"
-     setHeader "Access-Control-Allow-Headers" "Content-Type"
+     setHeader "Access-Control-Allow-Origin" "http://localhost:3000"
+     setHeader "Access-Control-Allow-Headers" "Content-Type, X-Csrf-Token"
+     setHeader "Access-Control-Allow-Credentials" "true"
      pure ctx
 
 baseHook :: AppAction () (HVect '[])
@@ -123,7 +151,8 @@ authHook =
     maybeUser $ \mUser ->
     do oldCtx <- getContext
        case mUser of
-         Nothing ->
+         Nothing -> do
+             setStatus unauthorized401
              text "Unknown user. Login first!"
          Just val ->
              return (val :&: oldCtx)

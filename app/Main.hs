@@ -19,7 +19,7 @@ import Control.Monad.IO.Class
 import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as TE
 import qualified Data.Text.Lazy as TL
-import Data.Aeson(object)
+import Data.Aeson(object, (.=))
 import Text.Mustache
 import Database.PostgreSQL.Simple.URL
 import Data.Maybe
@@ -63,49 +63,57 @@ app = do
     template <- compileMustacheDir "index" "views/"
     let render pname = TL.toStrict . renderMustache (template {templateActual = pname})
     prehook baseHook $ do
-        get root $ text "Hello World!"
-        get ("slide" <//> var) $ \currentPageCount-> do
-            -- イベントの編集ができるまで暫定対応
-            mEvent <- runSQL getFirstEvent
-            case lookupSlidePage mEvent currentPageCount of
-                Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
-                Nothing -> setStatus notFound404
-        get "login" $ html (render "login" (object []))
-        post "login" $ do
-            credential <- findCredential
-            case credential of
-                Nothing -> redirect "/login"
-                Just (username, password) -> 
-                     do loginRes <- runSQL $ loginUser username password
-                        case loginRes of
-                            Just userId ->
-                                do sid <- runSQL $ createSession userId
-                                   writeSession (Just sid)
-                                   redirect "/"
-                            Nothing -> redirect "/login"
-        get "register" $ html (render "register" (object []))
-        post "register" $ do
-            credential <- findNewUserInfo
-            case credential of
-                Nothing -> redirect "/register"
-                Just (username, email, password) -> do
-                    result <- runSQL $ registerUser username email password
-                    case result of
-                        Right _ -> text "Register succeed."
-                        Left _ -> redirect "/register"
-        prehook authHook $ do
-            prehook adminHook $ do
-                get "admin" $ text "admin panel"
-                get ("api" <//> "events") $ do
-                    events <- runSQL findEvents
-                    json $ map entityVal events
-                get ("api" <//> "events" <//> var) $ \eventId -> do
-                    event <- runSQL $ getEventById $ UniqueEvent eventId
-                    case event of
-                        Just entity -> json entity
-                        Nothing -> setStatus notFound404
+        prehook corsHeader $ do
+            get root $ text "Hello World!"
+            get ("slide" <//> var) $ \currentPageCount-> do
+                -- イベントの編集ができるまで暫定対応
+                mEvent <- runSQL getFirstEvent
+                case lookupSlidePage mEvent currentPageCount of
+                    Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
+                    Nothing -> setStatus notFound404
+            get "login" $ do
+                csrfToken <- getCsrfToken
+                html (render "login" (object ["__csrf_token" .= (csrfToken)]))
+            post "login" $ do
+                credential <- findCredential
+                case credential of
+                    Nothing -> redirect "/login"
+                    Just (username, password) -> 
+                        do loginRes <- runSQL $ loginUser username password
+                           case loginRes of
+                               Just userId ->
+                                   do sid <- runSQL $ createSession userId
+                                      writeSession (Just sid)
+                                      redirect "/"
+                               Nothing -> redirect "/login"
+            get "register" $ html (render "register" (object []))
+            post "register" $ do
+                credential <- findNewUserInfo
+                case credential of
+                    Nothing -> redirect "/register"
+                    Just (username, email, password) -> do
+                        result <- runSQL $ registerUser username email password
+                        case result of
+                            Right _ -> text "Register succeed."
+                            Left _ -> redirect "/register"
+            prehook authHook $ do
+                prehook adminHook $ do
+                    get "admin" $ text "admin panel"
+                    get ("api" <//> "events") $ do
+                        events <- runSQL findEvents
+                        json $ map entityVal events
+                    get ("api" <//> "events" <//> var) $ \eventId -> do
+                        event <- runSQL $ getEventById $ UniqueEvent eventId
+                        case event of
+                            Just entity -> json entity
+                            Nothing -> setStatus notFound404
 
 
+corsHeader =
+  do ctx <- getContext
+     setHeader "Access-Control-Allow-Origin" "*"
+     setHeader "Access-Control-Allow-Headers" "Content-Type"
+     pure ctx
 
 baseHook :: AppAction () (HVect '[])
 baseHook = return HNil

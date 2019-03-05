@@ -34,6 +34,8 @@ dependencies:
   - cryptohash
   - base16-bytestring
   - aeson
+  - wai-cors
+  - wai-extra
 library:
   source-dirs: src
 executable:

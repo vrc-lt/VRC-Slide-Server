@@ -36,6 +36,8 @@ import           Web.Spock hiding (SessionId)
 import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.Class
 import           Web.Spock.Config
+import Network.Wai.Middleware.RequestLogger
+import Network.Wai.Middleware.Cors
 
 
 
@@ -55,16 +57,28 @@ main = do
             -- イベントの編集ができるまで暫定対応
             insertExampleEvent
     spockCfg <- defaultSpockCfg (Nothing :: MySession) (PCPool pool) (DummyAppState ref)
-    runSpock (read port) (spock spockCfg app)
+    runSpock (read port) $ fmap (logStdoutDev.) $ fmap (corsSetting.) $ (spock spockCfg app)
 {-     runSpock (read port) (spock (spockCfg {spc_csrfProtection = True
         , spc_csrfHeaderName = "X-Csrf-Token"
         , spc_csrfPostName = "__csrf_token"}) app) -}
+
+-- corsSetting = cors (\req -> Just (simpleCorsResourcePolicy {corsOrigins = (Just (["http://localhost:3000"], True))}))
+corsSetting = cors (\req -> Just (CorsResourcePolicy
+    { corsOrigins = Just (["http://localhost:3000"], True)
+    , corsMethods = simpleMethods
+    , corsRequestHeaders = simpleHeaders
+    , corsExposedHeaders = Just simpleHeaders
+    , corsMaxAge = Nothing
+    , corsVaryOrigin = False
+    , corsRequireOrigin = False
+    , corsIgnoreFailures = False
+    }))
 
 app :: SpockM SqlBackend MySession MyAppState ()
 app = do
     template <- compileMustacheDir "index" "views/"
     let render pname = TL.toStrict . renderMustache (template {templateActual = pname})
-    prehook baseHook $ do
+    prehook baseHook $ 
         prehook corsHeader $ do
             get root $ text "Hello World!"
             get ("slide" <//> var) $ \currentPageCount-> do
@@ -117,30 +131,31 @@ app = do
                     get ("api" <//> "events") $ do
                         events <- runSQL findEvents
                         json $ map entityVal events
-                    get ("api" <//> "events" <//> var) $ \eventId -> do
-                        event <- runSQL $ getEventById $ UniqueEvent eventId
+                    get ("api" <//> "events" <//> var) $ \eventName -> do
+                        event <- runSQL $ getEventById $ UniqueEvent eventName
                         case event of
                             Just entity -> json entity
                             Nothing -> setStatus notFound404
-                    post ("api" <//> "events" <//> var <//> "update") $ \eventId -> do
+                    post ("api" <//> "events" <//> var <//> "update") $ \eventName -> do
                         mbody <- jsonBody
                         case mbody of
                             Just body -> do 
                                 runSQL $ do 
-                                    mevent <- getBy $ UniqueEvent eventId
+                                    mevent <- getEventById $ UniqueEvent eventName
                                     case mevent of
                                         Just entityEvent -> do
                                             replace (entityKey entityEvent) body
                                 setStatus ok200
-                            Nothing -> setStatus notFound404
+                            Nothing -> setStatus status503
 
                             
 
 corsHeader =
   do ctx <- getContext
-     setHeader "Access-Control-Allow-Origin" "http://localhost:3000"
-     setHeader "Access-Control-Allow-Headers" "Content-Type, X-Csrf-Token"
-     setHeader "Access-Control-Allow-Credentials" "true"
+{-      setHeader "Access-Control-Allow-Origin" "http://localhost:3000"
+     setHeader "Access-Control-Allow-Headers" "Accept, Content-Type, X-Csrf-Token"
+     setHeader "Access-Control-Allow-Methods" "POST, GET, OPTIONS"
+     setHeader "Access-Control-Allow-Credentials" "true" -}
      pure ctx
 
 baseHook :: AppAction () (HVect '[])

@@ -18,7 +18,6 @@ import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans.Resource
 import Control.Monad.IO.Class
 import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as TE
 import qualified Data.Text.Lazy as TL
 import Data.Aeson(object, (.=))
 import Text.Mustache
@@ -30,41 +29,40 @@ import           Slide.Database
 import           Slide.Util
 import           Slide.Actions.User
 import Data.HVect
-import Crypto.BCrypt
 import           Slide.Types
 import           Web.Spock hiding (SessionId)
-import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.Class
 import           Web.Spock.Config
 import Network.Wai.Middleware.RequestLogger
 import Network.Wai.Middleware.Cors
+import Network.Wai.Middleware.Static
+import Network.Wai (Middleware)
+import qualified Data.ByteString.Char8 as BS8
 
 
 
 main :: IO ()
 main = do
     port        <- getEnv "PORT"
+    allowOrigin <- getEnv "ADMIN_ORIGIN" >>= return . BS8.pack 
     connStr <- getEnv "DATABASE_URL" >>= return . postgreSQLConnectionString . fromJust . parseDatabaseUrl
     ref         <- newIORef 0
     pool        <- runStdoutLoggingT $ createPostgresqlPool connStr 5
 
     runStdoutLoggingT
         $ runResourceT
-        $ withPostgresqlConn connStr 
+        $ withPostgresqlConn connStr
         $ runReaderT
-        $ do 
-            runMigration migrateAll 
+        $ do
+            runMigration migrateAll
             -- イベントの編集ができるまで暫定対応
             insertExampleEvent
     spockCfg <- defaultSpockCfg (Nothing :: MySession) (PCPool pool) (DummyAppState ref)
-    runSpock (read port) $ fmap (logStdoutDev.) $ fmap (corsSetting.) $ (spock spockCfg app)
-{-     runSpock (read port) (spock (spockCfg {spc_csrfProtection = True
-        , spc_csrfHeaderName = "X-Csrf-Token"
-        , spc_csrfPostName = "__csrf_token"}) app) -}
+    runSpock (read port) $ fmap ((logStdout.) . ((corsSetting allowOrigin).)) (spock spockCfg app)
+    -- runSpock (read port) $ fmap ((logStdoutDev.) . ((corsSetting allowOrigin).)) (spock spockCfg app)
 
--- corsSetting = cors (\req -> Just (simpleCorsResourcePolicy {corsOrigins = (Just (["http://localhost:3000"], True))}))
-corsSetting = cors (\req -> Just (CorsResourcePolicy
-    { corsOrigins = Just (["http://localhost:3000"], True)
+corsSetting :: Origin -> Middleware
+corsSetting origin = cors (\_-> Just (CorsResourcePolicy
+    { corsOrigins = Just ([origin], True)
     , corsMethods = simpleMethods
     , corsRequestHeaders = simpleHeaders
     , corsExposedHeaders = Just simpleHeaders
@@ -74,89 +72,84 @@ corsSetting = cors (\req -> Just (CorsResourcePolicy
     , corsIgnoreFailures = False
     }))
 
+staticResource :: Middleware
+staticResource = staticPolicy $ addBase "static"
+
 app :: SpockM SqlBackend MySession MyAppState ()
 app = do
     template <- compileMustacheDir "index" "views/"
+    middleware staticResource
     let render pname = TL.toStrict . renderMustache (template {templateActual = pname})
-    prehook baseHook $ 
-        prehook corsHeader $ do
-            get root $ text "Hello World!"
-            get ("slide" <//> var) $ \currentPageCount-> do
-                -- イベントの編集ができるまで暫定対応
-                mEvent <- runSQL getFirstEvent
-                case lookupSlidePage mEvent currentPageCount of
-                    Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
-                    Nothing -> setStatus notFound404
-            get "login" $ do
-                csrfToken <- getCsrfToken
-                html (render "login" (object ["__csrf_token" .= (csrfToken)]))
-            post "login" $ do
-                credential <- findCredential
-                case credential of
-                    Nothing -> redirect "/login"
-                    Just (username, password) -> 
-                        do loginRes <- runSQL $ loginUser username password
-                           case loginRes of
-                               Just userId ->
-                                   do sid <- runSQL $ createSession userId
-                                      writeSession (Just sid)
-                                      redirect "/"
-                               Nothing -> redirect "/login"
-            get "register" $ html (render "register" (object []))
-            post "register" $ do
-                credential <- findNewUserInfo
-                case credential of
-                    Nothing -> redirect "/register"
-                    Just (username, email, password) -> do
-                        result <- runSQL $ registerUser username email password
-                        case result of
-                            Right _ -> text "Register succeed."
-                            Left _ -> redirect "/register"
-            post ("api" <//> "login") $ do
-                credential <- findCredential
-                case credential of
-                    Nothing -> redirect "/login"
-                    Just (username, password) -> 
-                        do loginRes <- runSQL $ loginUser username password
-                           case loginRes of
-                               Just userId ->
-                                   do sid <- runSQL $ createSession userId
-                                      writeSession (Just sid)
-                                      setStatus ok200
-                               Nothing -> redirect "/login"
+    prehook baseHook $ do
+        get root $ text "Hello World!"
+        get ("slide" <//> var) $ \currentPageCount-> do
+            -- イベントの編集ができるまで暫定対応
+            mEvent <- runSQL getFirstEvent
+            case lookupSlidePage mEvent currentPageCount of
+                Just (slideId, pageCount) -> redirect $ T.pack $ toSlideLink slideId pageCount
+                Nothing -> setStatus notFound404
+        get "login" $ do
+            csrfToken <- getCsrfToken
+            html (render "login" (object ["__csrf_token" .= (csrfToken)]))
+        post "login" $ do
+            credential <- findCredential
+            case credential of
+                Nothing -> redirect "/login"
+                Just (username, password) ->
+                    do loginRes <- runSQL $ loginUser username password
+                       case loginRes of
+                            Just userId ->
+                                do sid <- runSQL $ createSession userId
+                                   writeSession (Just sid)
+                                   redirect "/"
+                            Nothing -> redirect "/login"
+        get "register" $ html (render "register" (object []))
+        post "register" $ do
+            credential <- findNewUserInfo
+            case credential of
+                Nothing -> redirect "/register"
+                Just (username, email, password) -> do
+                    result <- runSQL $ registerUser username email password
+                    case result of
+                        Right _ -> text "Register succeed."
+                        Left _ -> redirect "/register"
+        post ("api" <//> "login") $ do
+            credential <- findCredential
+            case credential of
+                Nothing -> redirect "/login"
+                Just (username, password) ->
+                    do loginRes <- runSQL $ loginUser username password
+                       case loginRes of
+                           Just userId ->
+                               do sid <- runSQL $ createSession userId
+                                  writeSession (Just sid)
+                                  setStatus ok200
+                           Nothing -> redirect "/login"
 
-            prehook authHook $ do
-                prehook adminHook $ do
-                    get "admin" $ text "admin panel"
-                    get ("api" <//> "events") $ do
-                        events <- runSQL findEvents
-                        json $ map entityVal events
-                    get ("api" <//> "events" <//> var) $ \eventName -> do
-                        event <- runSQL $ getEventById $ UniqueEvent eventName
-                        case event of
-                            Just entity -> json entity
-                            Nothing -> setStatus notFound404
-                    post ("api" <//> "events" <//> var <//> "update") $ \eventName -> do
-                        mbody <- jsonBody
-                        case mbody of
-                            Just body -> do 
-                                runSQL $ do 
-                                    mevent <- getEventById $ UniqueEvent eventName
-                                    case mevent of
-                                        Just entityEvent -> do
-                                            replace (entityKey entityEvent) body
-                                setStatus ok200
-                            Nothing -> setStatus status503
+        prehook authHook $
+            prehook adminHook $ do
+                get ("api" <//> "events") $ do
+                    events <- runSQL findEvents
+                    json $ map entityVal events
+                get ("api" <//> "events" <//> var) $ \eventName -> do
+                    event <- runSQL $ getEventById $ UniqueEvent eventName
+                    case event of
+                        Just entity -> json entity
+                        Nothing -> setStatus notFound404
+                post ("api" <//> "events" <//> var <//> "update") $ \eventName -> do
+                    mbody <- jsonBody
+                    case mbody of
+                        Just body -> do 
+                            runSQL $ do 
+                                mevent <- getEventById $ UniqueEvent eventName
+                                case mevent of
+                                    Just entityEvent -> do
+                                        replace (entityKey entityEvent) body
+                            setStatus ok200
+                        Nothing -> setStatus status503
 
-                            
 
-corsHeader =
-  do ctx <- getContext
-{-      setHeader "Access-Control-Allow-Origin" "http://localhost:3000"
-     setHeader "Access-Control-Allow-Headers" "Accept, Content-Type, X-Csrf-Token"
-     setHeader "Access-Control-Allow-Methods" "POST, GET, OPTIONS"
-     setHeader "Access-Control-Allow-Credentials" "true" -}
-     pure ctx
+
 
 baseHook :: AppAction () (HVect '[])
 baseHook = return HNil
@@ -209,7 +202,7 @@ findNewUserInfo = do
     return (un, em, ps)
 
 lookupSlidePage :: Maybe Event -> Int -> Maybe (String, Int)
-lookupSlidePage mEvent currentPageCount = do 
+lookupSlidePage mEvent currentPageCount = do
     event <- mEvent
     let slides = eventSlides event
     slideId <- getSlideId slides currentPageCount

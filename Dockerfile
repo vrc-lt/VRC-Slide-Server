@@ -20,4 +20,6 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir /work
 COPY --from=build /work/.stack-work /work/.stack-work
 COPY --from=build /work/.stack-work/install/x86_64-linux/lts-12.26/8.4.4/bin /work/
+COPY ./views /work/views
+COPY ./views /views
 CMD ["/work/vrc-slide-server"]

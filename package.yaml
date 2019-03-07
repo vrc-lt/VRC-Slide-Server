@@ -6,25 +6,46 @@ maintainer: haru2036
 github: vrc-lt/VRC-Slide-Server
 category: Web
 extra-source-files: []
-
-ghc-options: -Wall
-
+ghc-options: '-Wall'
 dependencies:
   - base >= 4.7 && < 5
   - Spock >= 0.11
   - mtl
   - text
-
+  - persistent
+  - persistent-template
+  - persistent-postgresql
+  - bytestring
+  - monad-logger
+  - unliftio-core
+  - resource-pool
+  - transformers
+  - resourcet
+  - postgresql-simple-url
+  - postgresql-simple
+  - http-types
+  - bcrypt
+  - time
+  - hvect
+  - stache
+  - aeson
+  - random
+  - word8
+  - cryptohash
+  - base16-bytestring
+  - aeson
+  - wai
+  - wai-cors
+  - wai-extra
+  - wai-middleware-static
 library:
   source-dirs: src
-
 executable:
   main: Main.hs
   source-dirs:
     - app
   dependencies:
     - vrc-slide-server
-
 tests:
   spec:
     main: Spec.hs

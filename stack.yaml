@@ -37,7 +37,6 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-# extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
@@ -59,6 +58,8 @@ packages:
 # Extra directories used by stack for building
 # extra-include-dirs: [/path/to/dir]
 # extra-lib-dirs: [/path/to/dir]
+extra-lib-dirs:
+- /usr/lib/x86_64-linux-gnu
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor

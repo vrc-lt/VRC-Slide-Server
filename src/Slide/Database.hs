@@ -3,21 +3,21 @@
 module Slide.Database where
 
 
-import           Web.Spock()
+import           Web.Spock                      ( )
 import           Database.Persist
 import           Database.Persist.Sql
 import           Data.Text
 import           Control.Monad.Trans.Reader
 import           Control.Monad.IO.Class
-import Data.ByteString
+import           Data.ByteString
 import           Slide.Model
 import           Data.Time
 
 insertExampleEvent :: MonadIO m => ReaderT SqlBackend m ()
-insertExampleEvent = do 
+insertExampleEvent = do
     mEvent <- getFirstEvent
     case mEvent of
-        Just _ -> return ()
+        Just _  -> return ()
         Nothing -> repsert
             (toSqlKey 1)
             (Event
@@ -34,5 +34,6 @@ getFirstEvent = get $ toSqlKey 1
 findEvents :: MonadIO m => ReaderT SqlBackend m [Entity Event]
 findEvents = selectList [] []
 
-getEventById :: MonadIO m => Unique Event -> ReaderT SqlBackend m (Maybe (Entity Event))
+getEventById
+    :: MonadIO m => Unique Event -> ReaderT SqlBackend m (Maybe (Entity Event))
 getEventById = getBy

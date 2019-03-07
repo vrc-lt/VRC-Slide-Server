@@ -9,7 +9,7 @@ module Slide.Model where
 import           Database.Persist.TH
 import           Data.Text
 import           Data.Time
-import           Data.Aeson()
+import           Data.Aeson                     ( )
 
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|

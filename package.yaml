@@ -1,0 +1,78 @@
+library:
+  source-dirs: src
+  dependencies:
+  - text
+  - unliftio
+  - http-client
+  - http-client-tls
+  - persistent
+  - persistent-template
+  - persistent-sqlite
+  - persistent-postgresql
+  - yaml
+  - persistent
+  - base >=4.7 && <5
+  - aeson
+  - servant
+  - servant-server
+  - servant-auth
+  - servant-auth-server
+  - jose-jwt
+  - jose
+  - wai
+  - warp
+  - bytestring
+  - mtl
+  - transformers
+  - lens
+  - protolude
+  - monad-logger
+  - resourcet
+  - time
+  - resource-pool
+  exposed-modules:
+  - Lib
+tests:
+  vr-slide-server-test:
+    source-dirs: test
+    main: Spec.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - vr-slide-server
+    - protolude
+    - bytestring
+    - hspec
+    - hspec-wai
+    - hspec-wai-json
+    - aeson
+    - servant
+    - servant-server
+    - servant-auth
+    - servant-auth-server
+    - jose-jwt
+    - jose
+copyright: 2019 Author name here
+category: Web
+maintainer: example@example.com
+name: vr-slide-server
+version: 0.1.0.0
+extra-source-files:
+- README.md
+author: Author name here
+github: githubuser/vr-slide-server
+license: BSD3
+executables:
+  vr-slide-server-exe:
+    source-dirs: app
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - vr-slide-server

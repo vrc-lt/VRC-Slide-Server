@@ -39,9 +39,23 @@ import Network.HTTP.Client.TLS (tlsManagerSettings)
 import           Data.Time.Clock
 
 
-type API auths  = (Servant.Auth.Server.Auth auths User :> ProtectedAPI) :<|> UnregisteredAPI
+type API auths  = (Servant.Auth.Server.Auth auths User :> AdminAPI) :<|> (Servant.Auth.Server.Auth auths User :> ProtectedAPI) :<|> UnregisteredAPI
 
-type ProtectedAPI = "api" :> "sleeps" :> Get '[JSON] ()
+isAdmin :: User -> Bool
+isAdmin = (== "hoge") . userUid
+
+type AdminAPI = "api" :> Get '[JSON] ()
+
+adminApi :: Proxy AdminAPI
+adminApi = Proxy
+
+adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server AdminAPI
+adminServer pool (Servant.Auth.Server.Authenticated user) 
+  | isAdmin user = hoistServer protectedApi (`runReaderT` (pool, user)) $ dummy
+  | not (isAdmin user) = throwAll err403
+adminServer _ _ =  throwAll err401
+
+type ProtectedAPI = "api" :> "slides" :> Get '[JSON] ()
 
 protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
@@ -96,6 +110,6 @@ api :: Proxy (API '[JWT])
 api = Proxy
 
 server :: ConnectionPool -> CookieSettings -> JWTSettings -> Server (API auths)
-server pool cs jwts = protected pool :<|> unregisteredServer pool
+server pool cs jwts = adminServer pool :<|> protected pool :<|> unregisteredServer pool
 
 

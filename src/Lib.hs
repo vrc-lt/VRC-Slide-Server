@@ -35,23 +35,26 @@ import Model
 import Api.User
 import Api.Slide
 import qualified Network.HTTP.Client as HTTP
-import Network.HTTP.Client.TLS (tlsManagerSettings) 
+import Network.HTTP.Client.TLS (tlsManagerSettings)
 import           Data.Time.Clock
 
 
-type API auths  = (Servant.Auth.Server.Auth auths User :> AdminAPI) :<|> (Servant.Auth.Server.Auth auths User :> ProtectedAPI) :<|> UnregisteredAPI
+type API auths  = (Servant.Auth.Server.Auth auths User :> AdminAPI) :<|> (Servant.Auth.Server.Auth auths User :> ProtectedAPI) :<|> PublicAPI
 
 isAdmin :: User -> Bool
 isAdmin = (== "hoge") . userUid
 
-type AdminAPI = "api" :> Get '[JSON] ()
+type AdminAPI = "admin" :> "events" :> Get '[JSON] [Event]
+                :<|> "admin" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
+                :<|> "admin" :> "event" :> Capture "eventName" Text :> Put '[JSON] Event
+                :<|> "admin" :> "users" :> Get '[JSON] [User]
 
 adminApi :: Proxy AdminAPI
 adminApi = Proxy
 
 adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server AdminAPI
-adminServer pool (Servant.Auth.Server.Authenticated user) 
-  | isAdmin user = hoistServer protectedApi (`runReaderT` (pool, user)) $ dummy
+adminServer pool (Servant.Auth.Server.Authenticated user)
+  | isAdmin user = hoistServer adminApi (`runReaderT` (pool, user)) $ undefined
   | not (isAdmin user) = throwAll err403
 adminServer _ _ =  throwAll err401
 
@@ -60,17 +63,17 @@ type ProtectedAPI = "api" :> "slides" :> Get '[JSON] ()
 protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
 
-protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server ProtectedAPI 
+protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server ProtectedAPI
 protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (`runReaderT` (pool, user)) $ dummy
 protected _ _ =  throwAll err401
 
-type UnregisteredAPI = "slide" :> QueryParam "page" Int :> Get '[JSON] ()
+type PublicAPI = "slide" :> QueryParam "page" Int :> Get '[JSON] ()
 
-unregisteredApi :: Proxy UnregisteredAPI
-unregisteredApi = Proxy
+publicApi :: Proxy PublicAPI
+publicApi = Proxy
 
-unregisteredServer :: ConnectionPool -> Server UnregisteredAPI
-unregisteredServer pool = hoistServer unregisteredApi (`runReaderT` pool) $ handleRequestFromVRC
+publicServer :: ConnectionPool -> Server PublicAPI
+publicServer pool = hoistServer publicApi (`runReaderT` pool) $ handleRequestFromVRC
 
 data AuthResult val
   = BadPassword
@@ -110,6 +113,6 @@ api :: Proxy (API '[JWT])
 api = Proxy
 
 server :: ConnectionPool -> CookieSettings -> JWTSettings -> Server (API auths)
-server pool cs jwts = adminServer pool :<|> protected pool :<|> unregisteredServer pool
+server pool cs jwts = adminServer pool :<|> protected pool :<|> publicServer pool
 
 

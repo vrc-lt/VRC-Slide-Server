@@ -25,7 +25,10 @@ import Servant.Auth.Server
 import Crypto.JWT (SignedJWT, JWTError, ClaimsSet, stringOrUri, decodeCompact, defaultJWTValidationSettings, verifyClaims, claimSub, FromCompact, AsError, StringOrURI, JWTValidationSettings)
 import Crypto.JOSE.JWK (JWK, fromOctets, JWKSet(..))
 import Crypto.JOSE.JWA.JWS (Alg(..))
+import Control.Monad (join)
+import Control.Monad.IO.Unlift (MonadUnliftIO)
 import Control.Monad.Trans.Except (runExceptT)
+import Control.Monad.Trans.Control (MonadBaseControl)
 import Control.Monad.Trans
 import Control.Monad.Except (catchError)
 import Control.Lens ((^.))
@@ -44,18 +47,19 @@ type API auths  = (Servant.Auth.Server.Auth auths User :> AdminAPI) :<|> (Servan
 isAdmin :: User -> Bool
 isAdmin = (== "hoge") . userUid
 
-type AdminAPI = "admin" :> "events" :> Get '[JSON] [Event]
-                :<|> "admin" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
-                :<|> "admin" :> "event" :> Capture "eventName" Text :> Put '[JSON] Event
-                :<|> "admin" :> "users" :> Get '[JSON] [User]
+
+type AdminAPI = "admin" :> "events" :> Get '[JSON] Text
 
 adminApi :: Proxy AdminAPI
 adminApi = Proxy
 
-adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server AdminAPI
-adminServer pool (Servant.Auth.Server.Authenticated user)
-  | isAdmin user = hoistServer adminApi (`runReaderT` (pool, user)) $ undefined
-  | not (isAdmin user) = throwAll err403
+adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> ServerT AdminAPI Handler
+adminServer pool (Servant.Auth.Server.Authenticated user) = do 
+                                                              mUser <- liftIO $ flip runSqlPool pool $ getByValue user
+                                                              case mUser of
+                                                                    Just (Entity _ (usr@(User _ _ _ True))) -> hoistServer adminApi (`runReaderT` (pool, usr)) $ returnDummyText
+                                                                    Just _ -> throwAll err403
+                                                                    Nothing   -> throwAll err401
 adminServer _ _ =  throwAll err401
 
 type ProtectedAPI = "api" :> "slides" :> Get '[JSON] ()
@@ -67,7 +71,7 @@ protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server Pro
 protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (`runReaderT` (pool, user)) $ dummy
 protected _ _ =  throwAll err401
 
-type PublicAPI = "slide" :> QueryParam "page" Int :> Get '[JSON] ()
+type PublicAPI = "slide" :> Capture "page" Int :> Get '[JSON] ()
 
 publicApi :: Proxy PublicAPI
 publicApi = Proxy

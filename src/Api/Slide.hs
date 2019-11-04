@@ -15,6 +15,5 @@ import           Api.Types
 dummy :: RegisteredHandler ()
 dummy = undefined
 
-handleRequestFromVRC :: Maybe Int -> UnregisteredHandler ()
-handleRequestFromVRC (Just page) = undefined
-handleRequestFromVRC Nothing = throwAll err404
+handleRequestFromVRC :: Int -> UnregisteredHandler ()
+handleRequestFromVRC page = undefined

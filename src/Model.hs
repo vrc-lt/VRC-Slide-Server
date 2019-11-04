@@ -48,6 +48,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         uid Uid Unique
         name Text Maybe
         email Text Maybe
+        isAdmin Bool
         UniqueUid uid
         deriving Show
 
@@ -69,5 +70,5 @@ instance Eq User where
 
 instance ToJWT User
 instance FromJWT User where
-    decodeJWT claimsSet = Right $ User (pack $ show uid) Nothing Nothing
+    decodeJWT claimsSet = Right $ User (pack $ show uid) Nothing Nothing False
         where uid = fromJust (claimsSet ^. claimSub) ^?! string

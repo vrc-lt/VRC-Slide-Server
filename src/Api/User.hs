@@ -1,4 +1,5 @@
 
+{-# LANGUAGE OverloadedStrings#-}
 {-# LANGUAGE TemplateHaskell #-}
 module Api.User where
 
@@ -8,10 +9,12 @@ import           Control.Monad.Trans.Reader
 import           Servant
 import           Database.Persist
 import           Database.Persist.Sql
+import           Data.Text(Text)
 import           Data.Aeson
 import           Data.Aeson.TH
 import           Data.Char                      ( toLower )
 import           Model
+import           Api.Types
 
 data RegisterResult = RegSuccess | AlreadyTaken
       deriving(Show, Eq)
@@ -26,3 +29,7 @@ registerUser = do
             case mUser of
                   Just user -> return AlreadyTaken
                   Nothing   -> insert user >> return RegSuccess
+
+
+returnDummyText :: AdminHandler Text
+returnDummyText = return "hoge"

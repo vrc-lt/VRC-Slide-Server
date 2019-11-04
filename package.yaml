@@ -3,6 +3,8 @@ library:
   dependencies:
   - text
   - unliftio
+  - unliftio-core
+  - monad-control
   - http-client
   - http-client-tls
   - persistent

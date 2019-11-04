@@ -1,0 +1,42 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: haskell:8.6.5
+    steps:
+      - checkout
+      - restore_cache:
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          name: Restore Cached Dependencies
+          keys:
+            - vr-slide-server-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
+            - vr-slide-server-{{ checksum "stack.yaml" }}
+      - run:
+          name: Install non-cabal dependencies
+          command: apt-get update && apt-get upgrade -y --assume-yes && apt-get install -y --assume-yes xz-utils gcc libgmp-dev zlib1g-dev && apt-get install -y --assume-yes libpq-dev 
+      - run:
+          name: Resolve/Update Dependencies
+          command: stack setup
+      - run:
+          name: Run tests
+          command: stack test -j2
+      - run:
+          name: Run hlint
+          command: |
+            apt update
+            apt install -y curl
+            curl -sL https://raw.github.com/ndmitchell/hlint/master/misc/travis.sh | sh -s .
+      - run:
+          name: Install executable
+          command: stack install -j2
+      - save_cache:
+          name: Cache Dependencies
+          key: vr-slide-server-{{ checksum "stack.yaml" }}-{{ checksum "package.yaml" }}
+          paths:
+            - "/root/.stack"
+            - ".stack-work"
+      - store_artifacts:
+          # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/ 
+          path: ~/.local/bin/vr-slide-server-exe
+          destination: vr-slide-server-exe
+

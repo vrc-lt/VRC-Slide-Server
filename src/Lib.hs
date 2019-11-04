@@ -57,7 +57,7 @@ adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> ServerT 
 adminServer pool (Servant.Auth.Server.Authenticated user) = do 
                                                               mUser <- liftIO $ flip runSqlPool pool $ getByValue user
                                                               case mUser of
-                                                                    Just (Entity _ (usr@(User _ _ _ True))) -> hoistServer adminApi (`runReaderT` (pool, usr)) $ returnDummyText
+                                                                    Just (Entity _ (usr@(User _ _ _ True True))) -> hoistServer adminApi (`runReaderT` (pool, usr)) $ returnDummyText
                                                                     Just _ -> throwAll err403
                                                                     Nothing   -> throwAll err401
 adminServer _ _ =  throwAll err401
@@ -67,8 +67,13 @@ type ProtectedAPI = "api" :> "slides" :> Get '[JSON] ()
 protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
 
-protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server ProtectedAPI
-protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (`runReaderT` (pool, user)) $ dummy
+protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> ServerT ProtectedAPI Handler
+protected pool (Servant.Auth.Server.Authenticated user) = do
+                                                              mUser <- liftIO $ flip runSqlPool pool $ getByValue user
+                                                              case mUser of
+                                                                    Just (Entity _ (usr@(User _ _ _ _ True))) -> hoistServer protectedApi (`runReaderT` (pool, usr)) $ dummy
+                                                                    Just _ -> throwAll err403
+                                                                    Nothing   -> throwAll err401
 protected _ _ =  throwAll err401
 
 type PublicAPI = "slide" :> Capture "event" Text :> Capture "page" Int :> Get '[JSON] ()

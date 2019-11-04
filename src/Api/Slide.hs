@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-module Api.Slide where
+module Api.Slide (dummy, handleRequestFromVRC) where
 
 import Protolude hiding(fromStrict, readFile, ask, concat)
 import           Model

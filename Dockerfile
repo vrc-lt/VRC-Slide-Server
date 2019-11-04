@@ -50,7 +50,6 @@ RUN apt-get install -y --assume-yes libpq-dev build-essential netbase
 
 COPY --from=build-stage /opt/vr-slide-server /opt/vr-slide-server
 
-COPY ./jwk.json /opt/vr-slide-server
 COPY ./audience.json /opt/vr-slide-server
 COPY ./conf/database-setting.yml /opt/vr-slide-server/conf/database-setting.yml
 

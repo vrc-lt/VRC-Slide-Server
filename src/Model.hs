@@ -56,12 +56,12 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         sdid Text
         count Int
         deriving Show
+
     Event json
         name Text
         slides [Slide]
         UniqueEvent name
         deriving Show
-
 |]
 
 instance Eq User where

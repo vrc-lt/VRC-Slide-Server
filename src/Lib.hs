@@ -71,7 +71,7 @@ protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> Server Pro
 protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (`runReaderT` (pool, user)) $ dummy
 protected _ _ =  throwAll err401
 
-type PublicAPI = "slide" :> Capture "page" Int :> Get '[JSON] ()
+type PublicAPI = "slide" :> Capture "event" Text :> Capture "page" Int :> Get '[JSON] ()
 
 publicApi :: Proxy PublicAPI
 publicApi = Proxy

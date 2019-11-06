@@ -3,7 +3,7 @@
 
 module Api.Event where
 
-import Protolude hiding(fromStrict, readFile, ask, concat, get)
+import Protolude hiding(fromStrict, readFile, ask, concat, get, replace)
 import           Model
 import           Util
 import           Servant
@@ -29,7 +29,7 @@ verifiedUserHook handler = do
     (pool, JWTUser uid) <- ask
     muser <- liftIO $ flip runSqlPool pool $ getBy $ UniqueUid uid
     case muser of
-        Just (euser@(Entity _ (User _ _ _ _ True))) -> lift $ runReaderT handler (pool, euser) 
+        Just euser@(Entity _ (User _ _ _ _ True)) -> lift $ runReaderT handler (pool, euser) 
         Just euser -> throwAll err403 
         Nothing -> throwAll err401
     
@@ -37,9 +37,7 @@ verifiedUserHook handler = do
 getOwnedEvents :: ProtectedHandler [Event]
 getOwnedEvents = do
     (pool, euser) <- ask
-    events <- liftIO $ flip runSqlPool pool $ do
-        eventsList <- selectList [EventAuthorId ==. entityKey euser] []
-        return $ eventsList 
+    events <- liftIO $ flip runSqlPool pool $ selectList [EventAuthorId ==. entityKey euser] []
     return $ map entityVal events
     
 
@@ -51,4 +49,13 @@ getEvent eventName = do
         (euser, (Just (Entity _ event@(Event _ authorId _ ))))
             | authorId == entityKey euser -> return event
             | otherwise -> throwAll err403
-        otherwise -> throwAll err404
+        _ -> throwAll err404
+
+putEvent :: Text -> Event -> ProtectedHandler ()
+putEvent eventName ev = do
+    (pool, euser) <- ask
+    liftIO $ flip runSqlPool pool $ do
+        mEvent <- getBy $ UniqueEvent eventName
+        case mEvent of
+            Just e -> replace (entityKey e) ev{eventAuthorId = entityKey euser}
+            Nothing -> insert ev{eventAuthorId = entityKey euser} >> return ()

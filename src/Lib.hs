@@ -62,14 +62,12 @@ adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> Serve
 adminServer pool (Servant.Auth.Server.Authenticated user) = hoistServer adminApi (`runReaderT` (pool, user)) $ undefined
 adminServer _ _ =  throwAll err401
 
---ToDo: dummy
 type ProtectedAPI = "api" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
                :<|> "api" :> "events" :> Get '[JSON] [Event]
 
 protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
 
---ToDo: dummy handlers
 protected :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT ProtectedAPI Handler
 protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi ((`runReaderT` (pool, user)) . verifiedUserHook) $ getEvent :<|> getOwnedEvents
 protected _ _ =  throwAll err401

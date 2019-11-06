@@ -4,8 +4,10 @@ import           Control.Monad.Trans.Reader
 import           Database.Persist.Sql
 import           Model
 
-type AdminHandler a = ReaderT (ConnectionPool, User) Handler a
+type AdminHandler a = ReaderT (ConnectionPool, JWTUser) Handler a
 
-type RegisteredHandler a = ReaderT (ConnectionPool, User) Handler a
+type ProtectedHandler a = ReaderT (ConnectionPool, Entity User) Handler a
 
-type UnregisteredHandler a = ReaderT ConnectionPool Handler a
+type AuthenticatedHandler a = ReaderT (ConnectionPool, JWTUser) Handler a
+
+type PublicHandler a = ReaderT ConnectionPool Handler a

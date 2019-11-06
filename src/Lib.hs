@@ -37,14 +37,15 @@ import DataStore.Internal
 import Model
 import Api.User
 import Api.Slide
+import Api.Event
 import qualified Network.HTTP.Client as HTTP
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import           Data.Time.Clock
 
 
-type API auths  = (Servant.Auth.Server.Auth auths User :> AdminAPI) 
-              :<|> (Servant.Auth.Server.Auth auths User :> ProtectedAPI) 
-              :<|> (Servant.Auth.Server.Auth auths User :> AuthenticatedAPI) 
+type API auths  = (Servant.Auth.Server.Auth auths JWTUser :> AdminAPI) 
+              :<|> (Servant.Auth.Server.Auth auths JWTUser :> ProtectedAPI) 
+              :<|> (Servant.Auth.Server.Auth auths JWTUser :> AuthenticatedAPI) 
               :<|> PublicAPI
 
 isAdmin :: User -> Bool
@@ -57,34 +58,25 @@ adminApi :: Proxy AdminAPI
 adminApi = Proxy
 
 --ToDo: dummy handlers
-adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> ServerT AdminAPI Handler
-adminServer pool (Servant.Auth.Server.Authenticated user) = do 
-                                                              mUser <- liftIO $ flip runSqlPool pool $ getByValue user
-                                                              case mUser of
-                                                                    Just (Entity _ (usr@(User _ _ _ True True))) -> hoistServer adminApi (`runReaderT` (pool, usr)) $ undefined
-                                                                    Just _ -> throwAll err403
-                                                                    Nothing   -> throwAll err401
+adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT AdminAPI Handler
+adminServer pool (Servant.Auth.Server.Authenticated user) = hoistServer adminApi (`runReaderT` (pool, user)) $ undefined
 adminServer _ _ =  throwAll err401
 
 --ToDo: dummy
-type ProtectedAPI = "api" :> "slides" :> Get '[JSON] ()
+type ProtectedAPI = "api" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
+               :<|> "api" :> "events" :> Get '[JSON] [Event]
 
 protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
 
 --ToDo: dummy handlers
-protected :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> ServerT ProtectedAPI Handler
-protected pool (Servant.Auth.Server.Authenticated user) = do
-                                                              mUser <- liftIO $ flip runSqlPool pool $ getByValue user
-                                                              case mUser of
-                                                                    Just (Entity _ (usr@(User _ _ _ _ True))) -> hoistServer protectedApi (`runReaderT` (pool, usr)) $ undefined 
-                                                                    Just _ -> throwAll err403
-                                                                    Nothing   -> throwAll err401
+protected :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT ProtectedAPI Handler
+protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi ((`runReaderT` (pool, user)) . verifiedUserHook) $ getEvent :<|> getOwnedEvents
 protected _ _ =  throwAll err401
 
 type AuthenticatedAPI = "api" :> "requestPermission" :> Get '[JSON] Text
 
-authenticatedServer :: ConnectionPool -> Servant.Auth.Server.AuthResult User -> ServerT AuthenticatedAPI Handler
+authenticatedServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT AuthenticatedAPI Handler
 authenticatedServer pool (Servant.Auth.Server.Authenticated user) = hoistServer authenticatedApi (`runReaderT` (pool, user)) $ undefined 
 
 authenticatedApi :: Proxy AuthenticatedAPI

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
-module Api.Slide (dummy, handleRequestFromVRC) where
+module Api.Slide (handleRequestFromVRC) where
 
 import Protolude hiding(fromStrict, readFile, ask, concat)
 import           Model
@@ -20,10 +20,8 @@ import           Control.Monad.Trans
 import           Api.Common
 import           Api.Types
 
-dummy :: RegisteredHandler ()
-dummy = undefined
 
-handleRequestFromVRC :: Text -> Int -> UnregisteredHandler ()
+handleRequestFromVRC :: Text -> Int -> PublicHandler ()
 handleRequestFromVRC eventName currentPageCount = do
     pool <- ask
     event <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent eventName

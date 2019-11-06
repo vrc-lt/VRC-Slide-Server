@@ -60,6 +60,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 
     Event json
         name Text
+        authorId UserId
         slides [Slide]
         UniqueEvent name
         deriving Show
@@ -68,8 +69,13 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 instance Eq User where
     (==) x y = userUid x == userUid y
 
+data JWTUser = JWTUser{
+    uid :: Uid
+}
 
-instance ToJWT User
-instance FromJWT User where
-    decodeJWT claimsSet = Right $ User (pack $ show uid) Nothing Nothing False False
+$(deriveJSON defaultOptions ''JWTUser)
+
+instance ToJWT JWTUser
+instance FromJWT JWTUser where
+    decodeJWT claimsSet = Right $ JWTUser uid
         where uid = fromJust (claimsSet ^. claimSub) ^?! string

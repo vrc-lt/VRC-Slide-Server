@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module Api.Event where
@@ -12,7 +11,6 @@ import           Database.Persist
 import           Database.Persist.Sql
 import           Database.Persist.Class
 import           Control.Monad.IO.Class
-import           Control.Monad.Trans
 import           DataStore.Internal
 import           Data.Time.Clock
 import           Data.Text (Text, concat, pack)

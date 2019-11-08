@@ -49,9 +49,6 @@ type API auths  = (Servant.Auth.Server.Auth auths JWTUser :> AdminAPI)
               :<|> (Servant.Auth.Server.Auth auths JWTUser :> AuthenticatedAPI) 
               :<|> PublicAPI
 
-isAdmin :: User -> Bool
-isAdmin = (== "hoge") . userUid
-
 --ToDo: dummy
 type AdminAPI = "admin" :> "users" :> Get '[JSON] [User]
            :<|> "admin" :> "user" :> Capture "uid" Uid :> Get '[JSON] User

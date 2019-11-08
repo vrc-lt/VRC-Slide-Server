@@ -38,6 +38,7 @@ import Model
 import Api.User
 import Api.Slide
 import Api.Event
+import Api.Admin
 import qualified Network.HTTP.Client as HTTP
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import           Data.Time.Clock
@@ -52,17 +53,20 @@ isAdmin :: User -> Bool
 isAdmin = (== "hoge") . userUid
 
 --ToDo: dummy
-type AdminAPI = "admin" :> "events" :> Get '[JSON] Text
+type AdminAPI = "admin" :> "users" :> Get '[JSON] [User]
+           :<|> "admin" :> "user" :> Capture "uid" Uid :> Get '[JSON] User
+           :<|> "admin" :> "user" :> Capture "uid" Uid :> Put '[JSON] User
 
 adminApi :: Proxy AdminAPI
 adminApi = Proxy
 
 --ToDo: dummy handlers
 adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT AdminAPI Handler
-adminServer pool (Servant.Auth.Server.Authenticated user) = hoistServer adminApi (`runReaderT` (pool, user)) $ undefined
+adminServer pool (Servant.Auth.Server.Authenticated user) = hoistServer adminApi (adminUserHook pool user) $ undefined
 adminServer _ _ =  throwAll err401
 
 type ProtectedAPI = "api" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
+               :<|> "api" :> "event" :> Capture "eventName" Text :> Delete '[JSON] ()
                :<|> "api" :> "event" :> Capture "eventName" Text :> ReqBody '[JSON] Event :> Put '[JSON] ()
                :<|> "api" :> "events" :> Get '[JSON] [Event]
 
@@ -70,7 +74,7 @@ protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
 
 protected :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT ProtectedAPI Handler
-protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (verifiedUserHook pool user) $ getEvent :<|> putEvent :<|> getOwnedEvents
+protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (verifiedUserHook pool user) $ getEvent :<|> deleteEvent :<|> putEvent :<|> getOwnedEvents
 protected _ _ =  throwAll err401
 
 type AuthenticatedAPI = "api" :> "requestPermission" :> Get '[JSON] Text

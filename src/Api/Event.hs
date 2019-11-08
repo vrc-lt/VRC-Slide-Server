@@ -48,6 +48,20 @@ getEvent eventName = do
             | otherwise -> throwAll err403
         _ -> throwAll err404
 
+deleteEvent :: Text -> ProtectedHandler () 
+deleteEvent eventName = do
+    (pool, euser) <- ask
+    result <- liftIO $ flip runSqlPool pool $ do
+        maybeEvent <- getBy $ UniqueEvent eventName
+        case (euser, maybeEvent) of
+            (euser, (Just (Entity key (Event _ authorId _ ))))
+                | authorId == entityKey euser -> return . Right =<< delete key
+                | otherwise -> return $ Left err403
+            _ -> return $ Left err404
+    case result of
+        Right a -> return a
+        Left err -> throwAll err
+
 putEvent :: Text -> Event -> ProtectedHandler ()
 putEvent eventName ev = do
     (pool, euser) <- ask

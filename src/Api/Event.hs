@@ -22,12 +22,11 @@ import           Api.Common
 import           Api.Types
 
 
-verifiedUserHook :: ProtectedHandler a -> ReaderT (ConnectionPool, JWTUser) Handler a
-verifiedUserHook handler = do
-    (pool, JWTUser uid) <- ask
+verifiedUserHook :: ConnectionPool -> JWTUser -> ProtectedHandler a -> Handler a
+verifiedUserHook pool (JWTUser uid) handler = do
     muser <- liftIO $ flip runSqlPool pool $ getBy $ UniqueUid uid
     case muser of
-        Just euser@(Entity _ (User _ _ _ _ True)) -> lift $ runReaderT handler (pool, euser) 
+        Just euser@(Entity _ (User _ _ _ _ True)) -> runReaderT handler (pool, euser) 
         Just euser -> throwAll err403 
         Nothing -> throwAll err401
     

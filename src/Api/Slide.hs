@@ -25,8 +25,8 @@ handleRequestFromVRC :: Text -> Int -> PublicHandler ()
 handleRequestFromVRC eventName currentPageCount = do
     pool <- ask
     event <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent eventName
-    case lookupSlidePage (event >>= return . entityVal) currentPageCount of
-        Just (slideId, pageCount) -> throwAll $ err303 {errHeaders = [("Location", (encodeUtf8 $ toSlideLink slideId pageCount))]} 
+    case lookupSlidePage (entityVal <$> event) currentPageCount of
+        Just (slideId, pageCount) -> throwAll $ err303 {errHeaders = [("Location", encodeUtf8 $ toSlideLink slideId pageCount)]} 
         Nothing -> throwAll err404
 
 lookupSlidePage :: Maybe Event -> Int -> Maybe (Text, Int)
@@ -42,5 +42,5 @@ toSlideLink slideId page =
    concat ["https://speakerd.s3.amazonaws.com/presentations/",
    slideId,
    "/preview_slide_",
-   (pack $ show page),
+   pack $ show page,
    ".jpg?373063"]

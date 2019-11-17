@@ -10,13 +10,13 @@ import qualified Data.Text                     as T
 import qualified Data.Text.Encoding            as T
 
 calcSlideId :: [Slide] -> Int -> Maybe T.Text
-calcSlideId ((Slide sdId count) : xs) pageCount
+calcSlideId (Slide sdId count : xs) pageCount
   | count <= pageCount = calcSlideId xs (pageCount - count)
   | count > pageCount  = Just sdId
 calcSlideId [] _ = Nothing
 
 getSlideId :: [Slide] -> Int -> Maybe T.Text
-getSlideId slides slidePage = calcSlideId slides slidePage
+getSlideId = calcSlideId 
 
 calcSlidePage :: [Int] -> Int -> Int
 calcSlidePage (count : xs) pageCount
@@ -25,4 +25,4 @@ calcSlidePage (count : xs) pageCount
 calcSlidePage [] _ = 0
 
 getSlidePage :: [Int] -> Int -> Int
-getSlidePage slidePageNums slidePage = calcSlidePage slidePageNums slidePage
+getSlidePage = calcSlidePage 

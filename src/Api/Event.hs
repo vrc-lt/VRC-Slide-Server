@@ -18,6 +18,7 @@ import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.ByteString  as BS
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans
+import           Control.Monad
 import           Api.Common
 import           Api.Types
 
@@ -43,7 +44,7 @@ getEvent eventName = do
     (pool, euser) <- ask
     maybeEvent <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent eventName
     case (euser, maybeEvent) of
-        (euser, (Just (Entity _ event@(Event _ authorId _ ))))
+        (euser, Just (Entity _ event@(Event _ authorId _ )))
             | authorId == entityKey euser -> return event
             | otherwise -> throwAll err403
         _ -> throwAll err404
@@ -54,8 +55,8 @@ deleteEvent eventName = do
     result <- liftIO $ flip runSqlPool pool $ do
         maybeEvent <- getBy $ UniqueEvent eventName
         case (euser, maybeEvent) of
-            (euser, (Just (Entity key (Event _ authorId _ ))))
-                | authorId == entityKey euser -> return . Right =<< delete key
+            (euser, Just (Entity key (Event _ authorId _ )))
+                | authorId == entityKey euser -> Right <$> delete key
                 | otherwise -> return $ Left err403
             _ -> return $ Left err404
     case result of
@@ -69,4 +70,4 @@ putEvent eventName ev = do
         mEvent <- getBy $ UniqueEvent eventName
         case mEvent of
             Just e -> replace (entityKey e) ev{eventAuthorId = entityKey euser}
-            Nothing -> insert ev{eventAuthorId = entityKey euser} >> return ()
+            Nothing -> void (insert ev{eventAuthorId = entityKey euser})

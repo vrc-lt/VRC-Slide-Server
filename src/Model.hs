@@ -69,7 +69,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 instance Eq User where
     (==) x y = userUid x == userUid y
 
-data JWTUser = JWTUser{
+newtype JWTUser = JWTUser{
     uid :: Uid
 }
 

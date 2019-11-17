@@ -77,7 +77,7 @@ protected _ _ =  throwAll err401
 type AuthenticatedAPI = "api" :> "requestPermission" :> Get '[JSON] Text
 
 authenticatedServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT AuthenticatedAPI Handler
-authenticatedServer pool (Servant.Auth.Server.Authenticated user) = hoistServer authenticatedApi (`runReaderT` (pool, user)) $ undefined 
+authenticatedServer pool (Servant.Auth.Server.Authenticated user) = hoistServer authenticatedApi (`runReaderT` (pool, user)) undefined 
 
 authenticatedApi :: Proxy AuthenticatedAPI
 authenticatedApi = Proxy
@@ -88,7 +88,7 @@ publicApi :: Proxy PublicAPI
 publicApi = Proxy
 
 publicServer :: ConnectionPool -> Server PublicAPI
-publicServer pool = hoistServer publicApi (`runReaderT` pool) $ handleRequestFromVRC
+publicServer pool = hoistServer publicApi (`runReaderT` pool) handleRequestFromVRC
 
 data AuthResult val
   = BadPassword

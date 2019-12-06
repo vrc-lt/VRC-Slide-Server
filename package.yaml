@@ -32,6 +32,7 @@ library:
   - resourcet
   - time
   - resource-pool
+  - unordered-containers
   exposed-modules:
   - Lib
 tests:

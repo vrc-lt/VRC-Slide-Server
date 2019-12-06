@@ -77,5 +77,5 @@ $(deriveJSON defaultOptions ''JWTUser)
 
 instance ToJWT JWTUser
 instance FromJWT JWTUser where
-    decodeJWT claimsSet = Right $ JWTUser uid
+    decodeJWT claimsSet = Right $ JWTUser uid 
         where uid = fromJust (claimsSet ^. claimSub) ^?! string

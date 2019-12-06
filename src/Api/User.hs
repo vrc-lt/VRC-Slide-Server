@@ -21,14 +21,14 @@ data RegisterResult = RegSuccess | AlreadyTaken
 
 $(deriveJSON defaultOptions{fieldLabelModifier = drop 4, constructorTagModifier = map toLower} ''RegisterResult)
 
-registerUser :: ReaderT (ConnectionPool, User) Handler RegisterResult
+registerUser :: AuthenticatedHandler RegisterResult
 registerUser = do
       (pool, user) <- ask
       liftIO $ flip runSqlPool pool $ do
-            mUser <- getByValue user
+            mUser <- getBy $ UniqueUid $ uid user
             case mUser of
                   Just user -> return AlreadyTaken
-                  Nothing   -> insert user >> return RegSuccess
+                  Nothing   -> insert (User (uid user) Nothing Nothing False False) >> return RegSuccess
 
 
 returnDummyText :: AdminHandler Text

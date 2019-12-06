@@ -74,10 +74,11 @@ protected :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT
 protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (verifiedUserHook pool user) $ getEvent :<|> deleteEvent :<|> putEvent :<|> getOwnedEvents
 protected _ _ =  throwAll err401
 
-type AuthenticatedAPI = "api" :> "requestPermission" :> Get '[JSON] Text
+type AuthenticatedAPI = "api" :> "requestPermission" :> Get '[JSON] RegisterResult
 
 authenticatedServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT AuthenticatedAPI Handler
-authenticatedServer pool (Servant.Auth.Server.Authenticated user) = hoistServer authenticatedApi (`runReaderT` (pool, user)) undefined 
+authenticatedServer pool (Servant.Auth.Server.Authenticated user) = hoistServer authenticatedApi (`runReaderT` (pool, user)) registerUser
+authenticatedServer _ _ = throwAll err401
 
 authenticatedApi :: Proxy AuthenticatedAPI
 authenticatedApi = Proxy
@@ -99,25 +100,28 @@ data AuthResult val
 startApp :: IO ()
 startApp = do
   jsonJwk <- fetchKey
-  let Just (Success jwkset) = fromJSON <$> decode jsonJwk
-  let jwk = fromOctets jsonJwk
-  Just trustedAudiences <- decode . fromStrict <$> readFile "./audience.json"
-  let jwtCfg = JWTSettings jwk (Just RS256) jwkset (matchAud trustedAudiences)
-      cfg = defaultCookieSettings :. jwtCfg :. EmptyContext
-      --- Here we actually make concrete
-      api = Proxy :: Proxy (API '[JWT])
-      matchAud :: [StringOrURI] -> StringOrURI -> IsMatch
-      matchAud trusteds aud = case find (== aud) trusteds of
-                                Just _ -> Matches
-                                Nothing -> DoesNotMatch
-  doMigration migrateAll
-  pool <- pgPool
-  putStrLn ("starting server at port 8080" :: Text)
-  run 8080 $ app pool cfg defaultCookieSettings jwtCfg
+  case fromJSON <$> decode jsonJwk of
+      Just (Success jwkset) -> do
+        let jwk = fromOctets jsonJwk
+        Just trustedAudiences <- decode . fromStrict <$> readFile "./audience.json"
+        let jwtCfg = JWTSettings jwk (Just RS256) jwkset (matchAud trustedAudiences)
+            cfg = defaultCookieSettings :. jwtCfg :. EmptyContext
+            --- Here we actually make concrete
+            api = Proxy :: Proxy (API '[JWT])
+            matchAud :: [StringOrURI] -> StringOrURI -> IsMatch
+            matchAud trusteds aud = case find (== aud) trusteds of
+                                      Just _ -> Matches
+                                      Nothing -> DoesNotMatch
+        doMigration migrateAll
+        pool <- pgPool
+        putStrLn ("starting server at port 8080" :: Text)
+        run 8080 $ app pool cfg defaultCookieSettings jwtCfg
+      Just (Error e) -> putStrLn e
+      Nothing -> return ()
   where
     fetchKey = do
       manager <- HTTP.newManager tlsManagerSettings
-      request <- HTTP.parseRequest "https://www.googleapis.com/oauth2/v3/certs"
+      request <- HTTP.parseRequest "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
       response <- HTTP.httpLbs request manager
       return $ HTTP.responseBody response
 

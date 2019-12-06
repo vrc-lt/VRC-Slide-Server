@@ -64,7 +64,7 @@ adminServer _ _ =  throwAll err401
 
 type ProtectedAPI = "api" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
                :<|> "api" :> "event" :> Capture "eventName" Text :> Delete '[JSON] ()
-               :<|> "api" :> "event" :> Capture "eventName" Text :> ReqBody '[JSON] Event :> Put '[JSON] ()
+               :<|> "api" :> "event" :> "new" :> ReqBody '[JSON] Event :> Put '[JSON] ()
                :<|> "api" :> "events" :> Get '[JSON] [Event]
 
 protectedApi :: Proxy ProtectedAPI

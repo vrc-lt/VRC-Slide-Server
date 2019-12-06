@@ -60,7 +60,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 
     Event json
         name Text
-        authorId UserId
+        authorId Uid
         slides [Slide]
         UniqueEvent name
         deriving Show

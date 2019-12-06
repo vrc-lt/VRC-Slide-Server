@@ -6,7 +6,7 @@ import           Model
 
 type AdminHandler a = ReaderT (ConnectionPool, Entity User ) Handler a
 
-type ProtectedHandler a = ReaderT (ConnectionPool, Entity User) Handler a
+type ProtectedHandler a = ReaderT (ConnectionPool, User) Handler a
 
 type AuthenticatedHandler a = ReaderT (ConnectionPool, JWTUser) Handler a
 

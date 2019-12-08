@@ -49,7 +49,6 @@ type API auths  = (Servant.Auth.Server.Auth auths JWTUser :> AdminAPI)
               :<|> (Servant.Auth.Server.Auth auths JWTUser :> AuthenticatedAPI) 
               :<|> PublicAPI
 
---ToDo: dummy
 type AdminAPI = "admin" :> "users" :> Get '[JSON] [User]
            :<|> "admin" :> "user" :> Capture "uid" Uid :> Get '[JSON] User
            :<|> "admin" :> "user" :> Capture "uid" Uid :> ReqBody '[JSON] User :> Put '[JSON] ()
@@ -57,7 +56,6 @@ type AdminAPI = "admin" :> "users" :> Get '[JSON] [User]
 adminApi :: Proxy AdminAPI
 adminApi = Proxy
 
---ToDo: dummy handlers
 adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT AdminAPI Handler
 adminServer pool (Servant.Auth.Server.Authenticated user) = hoistServer adminApi (adminUserHook pool user) $ getUsers :<|> getUser :<|> putUser
 adminServer _ _ =  throwAll err401

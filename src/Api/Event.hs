@@ -63,9 +63,10 @@ deleteEvent eventName = do
         Right a -> return a
         Left err -> throwAll err
 
-putEvent :: Event -> ProtectedHandler ()
-putEvent ev = do
+putEvent :: EventSubmission -> ProtectedHandler ()
+putEvent es = do
     (pool, user) <- ask
+    let ev = Event (name es) (userUid user) (slides es)
     liftIO $ flip runSqlPool pool $ do
         mEvent <- getBy $ UniqueEvent $ eventName ev
         case mEvent of

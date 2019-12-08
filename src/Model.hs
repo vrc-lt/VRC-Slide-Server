@@ -66,6 +66,12 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         deriving Show
 |]
 
+data EventSubmission = EventSubmission{
+    name :: Text,
+    slides :: [Slide]
+}
+$(deriveJSON defaultOptions ''EventSubmission)
+
 instance Eq User where
     (==) x y = userUid x == userUid y
 

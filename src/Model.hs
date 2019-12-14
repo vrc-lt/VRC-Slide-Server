@@ -61,7 +61,7 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         deriving Show
 
     Event json
-        uuid UUID.UUID sqltype=uuid   
+        uuid UUID.UUID sqltype=uuid   default=gen_random_uuid()
         name Text
         authorId Uid
         slides [Slide]

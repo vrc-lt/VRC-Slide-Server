@@ -85,7 +85,7 @@ newtype JWTUser = JWTUser{
 $(deriveJSON defaultOptions ''JWTUser)
 
 instance PersistField UUID.UUID where
-  toPersistValue u = PersistDbSpecific . B8.pack . UUID.toString $ u
+  toPersistValue = PersistDbSpecific . B8.pack . UUID.toString 
   fromPersistValue (PersistDbSpecific t) =
     case UUID.fromString $ B8.unpack t of
       Just x -> Right x

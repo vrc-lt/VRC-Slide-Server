@@ -42,6 +42,7 @@ import Api.Admin
 import qualified Network.HTTP.Client as HTTP
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import           Data.Time.Clock
+import qualified Data.UUID as UUID
 
 
 type API auths  = (Servant.Auth.Server.Auth auths JWTUser :> AdminAPI) 
@@ -60,16 +61,17 @@ adminServer :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> Serve
 adminServer pool (Servant.Auth.Server.Authenticated user) = hoistServer adminApi (adminUserHook pool user) $ getUsers :<|> getUser :<|> putUser
 adminServer _ _ =  throwAll err401
 
-type ProtectedAPI = "api" :> "event" :> Capture "eventName" Text :> Get '[JSON] Event
-               :<|> "api" :> "event" :> Capture "eventName" Text :> Delete '[JSON] ()
-               :<|> "api" :> "event" :> "new" :> ReqBody '[JSON] EventSubmission :> Put '[JSON] ()
+type ProtectedAPI = "api" :> "event" :> Capture "eventName" UUID.UUID :> Get '[JSON] Event
+               :<|> "api" :> "event" :> Capture "eventName" UUID.UUID :> Delete '[JSON] ()
+               :<|> "api" :> "event" :> Capture "eventName" UUID.UUID :> ReqBody '[JSON] EventSubmission :> Put '[JSON] Event
+               :<|> "api" :> "event" :> "new" :> ReqBody '[JSON] EventSubmission :> Put '[JSON] Event
                :<|> "api" :> "events" :> Get '[JSON] [Event]
 
 protectedApi :: Proxy ProtectedAPI
 protectedApi = Proxy
 
 protected :: ConnectionPool -> Servant.Auth.Server.AuthResult JWTUser -> ServerT ProtectedAPI Handler
-protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (verifiedUserHook pool user) $ getEvent :<|> deleteEvent :<|> putEvent :<|> getOwnedEvents
+protected pool (Servant.Auth.Server.Authenticated user) = hoistServer protectedApi (verifiedUserHook pool user) $ getEvent :<|> deleteEvent :<|> modifyEvent :<|> newEvent :<|> getOwnedEvents
 protected _ _ =  throwAll err401
 
 type AuthenticatedAPI = "api" :> "requestPermission" :> Get '[JSON] RegisterResult
@@ -81,7 +83,7 @@ authenticatedServer _ _ = throwAll err401
 authenticatedApi :: Proxy AuthenticatedAPI
 authenticatedApi = Proxy
 
-type PublicAPI = "slide" :> Capture "event" Text :> Capture "page" Int :> Get '[JSON] ()
+type PublicAPI = "slide" :> Capture "uuid" UUID.UUID :> Capture "page" Int :> Get '[JSON] ()
 
 publicApi :: Proxy PublicAPI
 publicApi = Proxy

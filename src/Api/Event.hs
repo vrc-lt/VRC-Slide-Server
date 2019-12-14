@@ -16,6 +16,8 @@ import           Data.Time.Clock
 import           Data.Text (Text, concat, pack)
 import           Data.Text.Encoding (encodeUtf8)
 import qualified Data.ByteString  as BS
+import           Data.UUID (UUID)
+import           Data.UUID.V4 (nextRandom)
 import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans
 import           Control.Monad
@@ -39,23 +41,23 @@ getOwnedEvents = do
     return $ map entityVal events
     
 
-getEvent :: Text -> ProtectedHandler Event
-getEvent eventName = do
+getEvent :: UUID -> ProtectedHandler Event
+getEvent eventId = do
     (pool, user) <- ask
-    maybeEvent <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent eventName
+    maybeEvent <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent eventId
     case (user, maybeEvent) of
-        (user, Just (Entity _ event@(Event _ authorId _ )))
+        (user, Just (Entity _ event@(Event _ _ authorId _ )))
             | authorId == userUid user -> return event
             | otherwise -> throwAll err403
         _ -> throwAll err404
 
-deleteEvent :: Text -> ProtectedHandler () 
-deleteEvent eventName = do
+deleteEvent :: UUID -> ProtectedHandler () 
+deleteEvent eventId = do
     (pool, user) <- ask
     result <- liftIO $ flip runSqlPool pool $ do
-        maybeEvent <- getBy $ UniqueEvent eventName
+        maybeEvent <- getBy $ UniqueEvent eventId
         case (user, maybeEvent) of
-            (user, Just (Entity key (Event _ authorId _ )))
+            (user, Just (Entity key (Event _ _ authorId _ )))
                 | authorId == userUid user -> Right <$> delete key
                 | otherwise -> return $ Left err403
             _ -> return $ Left err404
@@ -63,12 +65,28 @@ deleteEvent eventName = do
         Right a -> return a
         Left err -> throwAll err
 
-putEvent :: EventSubmission -> ProtectedHandler ()
-putEvent es = do
+modifyEvent :: UUID -> EventSubmission -> ProtectedHandler Event
+modifyEvent eventId (EventSubmission ename eslides) = do
     (pool, user) <- ask
-    let ev = Event (name es) (userUid user) (slides es)
-    liftIO $ flip runSqlPool pool $ do
-        mEvent <- getBy $ UniqueEvent $ eventName ev
-        case mEvent of
-            Just e -> replace (entityKey e) ev{eventAuthorId = userUid user}
-            Nothing -> void (insert ev{eventAuthorId = userUid user})
+    result <- liftIO $ flip runSqlPool pool $ do
+        mEvent <- getBy $ UniqueEvent eventId
+        case mEvent of 
+            Just (Entity key event) 
+                | eventAuthorId event == userUid user -> do
+                    let newEvent = Event eventId ename (eventAuthorId event) eslides
+                    replace key newEvent 
+                    return (Right newEvent)
+                | otherwise -> return $ Left err403
+            Nothing -> return $ Left err404
+    case result of
+        Right event -> return event
+        Left e -> throwAll e
+
+
+
+newEvent :: EventSubmission -> ProtectedHandler Event
+newEvent es = do
+    (pool, user) <- ask
+    uuid <- liftIO nextRandom 
+    let ev = Event uuid (name es) (userUid user) (slides es)
+    liftIO $ flip runSqlPool pool $ insert ev >> return ev

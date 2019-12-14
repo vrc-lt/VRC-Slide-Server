@@ -41,6 +41,8 @@ import           Crypto.JWT                     ( SignedJWT
 import           Debug.Trace
 import           Data.Maybe                     ( fromJust )
 import           Data.Time.Clock
+import qualified Data.UUID as UUID
+import qualified Data.ByteString.Char8 as B8
 
 type Uid = Text
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -59,10 +61,11 @@ share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
         deriving Show
 
     Event json
+        uuid UUID.UUID sqltype=uuid   default=uuid_generate_v4()
         name Text
         authorId Uid
         slides [Slide]
-        UniqueEvent name
+        UniqueEvent uuid
         deriving Show
 |]
 
@@ -80,6 +83,17 @@ newtype JWTUser = JWTUser{
 }
 
 $(deriveJSON defaultOptions ''JWTUser)
+
+instance PersistField UUID.UUID where
+  toPersistValue u = PersistDbSpecific . B8.pack . UUID.toString $ u
+  fromPersistValue (PersistDbSpecific t) =
+    case UUID.fromString $ B8.unpack t of
+      Just x -> Right x
+      Nothing -> Left "Invalid UUID"
+  fromPersistValue _ = Left "Not PersistDBSpecific"
+
+instance PersistFieldSql UUID.UUID where
+  sqlType _ = SqlOther "uuid"
 
 instance ToJWT JWTUser
 instance FromJWT JWTUser where

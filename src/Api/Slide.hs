@@ -19,12 +19,13 @@ import           Control.Monad.Trans.Reader
 import           Control.Monad.Trans
 import           Api.Common
 import           Api.Types
+import           Data.UUID (UUID)
 
 
-handleRequestFromVRC :: Text -> Int -> PublicHandler ()
-handleRequestFromVRC eventName currentPageCount = do
+handleRequestFromVRC :: UUID -> Int -> PublicHandler ()
+handleRequestFromVRC uuid currentPageCount = do
     pool <- ask
-    event <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent eventName
+    event <- liftIO $ flip runSqlPool pool $ getBy $ UniqueEvent uuid 
     case lookupSlidePage (entityVal <$> event) currentPageCount of
         Just (slideId, pageCount) -> throwAll $ err303 {errHeaders = [("Location", encodeUtf8 $ toSlideLink slideId pageCount)]} 
         Nothing -> throwAll err404

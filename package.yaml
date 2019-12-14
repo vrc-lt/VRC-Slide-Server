@@ -33,6 +33,7 @@ library:
   - time
   - resource-pool
   - unordered-containers
+  - uuid
   exposed-modules:
   - Lib
 tests:

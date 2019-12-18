@@ -11,6 +11,7 @@ module Lib
     ) where
 
 import Protolude hiding(fromStrict, readFile)
+import System.Environment (getEnv)
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Text (Text, words, pack)
@@ -19,6 +20,8 @@ import Data.ByteString.Lazy (fromStrict)
 import Data.List (find, lookup)
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Cors (cors, simpleCorsResourcePolicy, corsRequestHeaders, corsOrigins)
+import Network.Wai.Middleware.Servant.Options (provideOptions)
 import Servant
 import Servant.Server
 import Servant.Auth.Server
@@ -100,6 +103,7 @@ data AuthResult val
 startApp :: IO ()
 startApp = do
   jsonJwk <- fetchKey
+  port <- getEnv "PORT"
   case fromJSON <$> decode jsonJwk of
       Just (Success jwkset) -> do
         let jwk = fromOctets jsonJwk
@@ -115,7 +119,7 @@ startApp = do
         doMigration migrateAll
         pool <- pgPool
         putStrLn ("starting server at port 8080" :: Text)
-        run 8080 $ app pool cfg defaultCookieSettings jwtCfg
+        run 8080 $ cors (const $ Just policy) $ app pool cfg defaultCookieSettings jwtCfg
       Just (Error e) -> putStrLn e
       Nothing -> return ()
   where
@@ -124,6 +128,9 @@ startApp = do
       request <- HTTP.parseRequest "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
       response <- HTTP.httpLbs request manager
       return $ HTTP.responseBody response
+    policy = simpleCorsResourcePolicy
+           { corsRequestHeaders = [ "content-type" ]
+           , corsOrigins = Nothing}
 
 app :: ConnectionPool -> Context '[CookieSettings, JWTSettings] -> CookieSettings -> JWTSettings -> Application
 app pool cfg cookieSettings jwtCfg = serveWithContext api cfg (server pool cookieSettings jwtCfg)

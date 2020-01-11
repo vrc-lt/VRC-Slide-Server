@@ -22,6 +22,8 @@ library:
   - jose-jwt
   - jose
   - wai
+  - wai-cors
+  - servant-options
   - warp
   - bytestring
   - mtl
@@ -34,6 +36,7 @@ library:
   - resource-pool
   - unordered-containers
   - uuid
+  - http-types
   exposed-modules:
   - Lib
 tests:

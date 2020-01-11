@@ -11,14 +11,18 @@ module Lib
     ) where
 
 import Protolude hiding(fromStrict, readFile)
+import System.Environment (getEnv)
 import Data.Aeson
 import Data.Aeson.TH
 import Data.Text (Text, words, pack)
 import Data.ByteString (ByteString, readFile)
 import Data.ByteString.Lazy (fromStrict)
 import Data.List (find, lookup)
+import Network.HTTP.Types.Method (methodPut)
 import Network.Wai
 import Network.Wai.Handler.Warp
+import Network.Wai.Middleware.Cors (cors, simpleMethods, simpleHeaders, simpleCorsResourcePolicy, corsRequestHeaders, corsOrigins, Origin, corsMethods)
+import Network.Wai.Middleware.Servant.Options (provideOptions)
 import Servant
 import Servant.Server
 import Servant.Auth.Server
@@ -34,6 +38,7 @@ import Control.Monad.Except (catchError)
 import Control.Lens ((^.))
 import Database.Persist.Sql
 import DataStore.Internal
+import qualified Data.ByteString.Char8 as BS8
 import Model
 import Api.User
 import Api.Slide
@@ -100,6 +105,12 @@ data AuthResult val
 startApp :: IO ()
 startApp = do
   jsonJwk <- fetchKey
+  port <- getEnv "PORT"
+  allowOrigin <- return . BS8.pack =<< getEnv "ALLOW_ORIGIN"
+  let policy = simpleCorsResourcePolicy { corsRequestHeaders = "authorization" : simpleHeaders 
+                                        , corsOrigins = Just ([allowOrigin], True)
+                                        , corsMethods = methodPut : simpleMethods
+                                        }
   case fromJSON <$> decode jsonJwk of
       Just (Success jwkset) -> do
         let jwk = fromOctets jsonJwk
@@ -115,7 +126,7 @@ startApp = do
         doMigration migrateAll
         pool <- pgPool
         putStrLn ("starting server at port 8080" :: Text)
-        run 8080 $ app pool cfg defaultCookieSettings jwtCfg
+        run 8080 $ cors (const $ Just policy) $ app pool cfg defaultCookieSettings jwtCfg
       Just (Error e) -> putStrLn e
       Nothing -> return ()
   where

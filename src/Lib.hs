@@ -106,7 +106,7 @@ startApp :: IO ()
 startApp = do
   jsonJwk <- fetchKey
   port <- getEnv "PORT"
-  allowOrigin <- return . BS8.pack =<< getEnv "ALLOW_ORIGIN"
+  allowOrigin <- BS8.pack <$> getEnv "ALLOW_ORIGIN"
   let policy = simpleCorsResourcePolicy { corsRequestHeaders = "authorization" : simpleHeaders 
                                         , corsOrigins = Just ([allowOrigin], True)
                                         , corsMethods = methodPut : simpleMethods

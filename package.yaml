@@ -1,55 +1,85 @@
-name: vrc-slide-server
-version: 1.0.0
-synopsis: A slide server for VRC_Panorama
-description: Please see README.md
-maintainer: haru2036
-github: vrc-lt/VRC-Slide-Server
-category: Web
-extra-source-files: []
-ghc-options: '-Wall'
-dependencies:
-  - base >= 4.7 && < 5
-  - Spock >= 0.11
-  - mtl
-  - text
-  - persistent
-  - persistent-template
-  - persistent-postgresql
-  - bytestring
-  - monad-logger
-  - unliftio-core
-  - resource-pool
-  - transformers
-  - resourcet
-  - postgresql-simple-url
-  - postgresql-simple
-  - http-types
-  - bcrypt
-  - time
-  - hvect
-  - stache
-  - aeson
-  - random
-  - word8
-  - cryptohash
-  - base16-bytestring
-  - aeson
-  - wai
-  - wai-cors
-  - wai-extra
-  - wai-middleware-static
 library:
   source-dirs: src
-executable:
-  main: Main.hs
-  source-dirs:
-    - app
   dependencies:
-    - vrc-slide-server
+  - text
+  - unliftio
+  - unliftio-core
+  - monad-control
+  - http-client
+  - http-client-tls
+  - persistent
+  - persistent-template
+  - persistent-sqlite
+  - persistent-postgresql
+  - yaml
+  - persistent
+  - base >=4.7 && <5
+  - aeson
+  - servant
+  - servant-server
+  - servant-auth
+  - servant-auth-server
+  - jose-jwt
+  - jose
+  - wai
+  - wai-cors
+  - servant-options
+  - warp
+  - bytestring
+  - mtl
+  - transformers
+  - lens
+  - protolude
+  - monad-logger
+  - resourcet
+  - time
+  - resource-pool
+  - unordered-containers
+  - uuid
+  - http-types
+  exposed-modules:
+  - Lib
 tests:
-  spec:
-    main: Spec.hs
+  vr-slide-server-test:
     source-dirs: test
+    main: Spec.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
     dependencies:
-      - hspec
-      - vrc-slide-server
+    - base
+    - vr-slide-server
+    - protolude
+    - bytestring
+    - hspec
+    - hspec-wai
+    - hspec-wai-json
+    - aeson
+    - servant
+    - servant-server
+    - servant-auth
+    - servant-auth-server
+    - jose-jwt
+    - jose
+copyright: 2019 Author name here
+category: Web
+maintainer: example@example.com
+name: vr-slide-server
+version: 0.1.0.0
+extra-source-files:
+- README.md
+author: Author name here
+github: githubuser/vr-slide-server
+license: BSD3
+executables:
+  vr-slide-server-exe:
+    source-dirs: app
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - base
+    - vr-slide-server

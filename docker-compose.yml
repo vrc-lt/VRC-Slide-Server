@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        buildno: 1
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://dev:secret@db:5432
+    links:
+      - db
+
+  db:
+    image: postgres:10.1
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_USER=dev"
+      - "POSTGRES_PASSWORD=secret"

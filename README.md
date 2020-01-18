@@ -1,9 +1,2 @@
-# VRC-Slide-Server
-VRC_Panorama向けのスライドサーバ
-
-## これは何？
-VRChatでは外部から画像を取得して表示する方法にVRC_Panoramaというコンポーネントを使う方法がありますが、決め打ちのURLからしか画像を取得できません。そのため、プレゼンテーションをするときなどにはスライドのURLを前もってワールドに埋め込んでおく必要がありましたが、それを回避し画像を差し替えるためにこのサーバからリダイレクトをする方法を取りました。そのサーバ部分がこのリポジトリの内容です。
-
-## ワールド側の準備
-* VRC_Panoramaに十分に長いPanoramaリストを作成し、`/slide/{slide-count}`に連番でスライドのページ数を指定してください。
-* VRC_Panoramaの`NextPano()`,`PrevPano()`をuGUIから呼び出せるようにしてください。
+# vr-slide-server
+[![CircleCI](https://circleci.com/gh/haru2036/sleepchart-server/tree/master.svg?style=svg)](https://circleci.com/gh/haru2036/sleepchart-server/tree/master)

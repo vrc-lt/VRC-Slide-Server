@@ -1,2 +1,8 @@
-*.old
-.stack-work/
+.stack-work
+*.swp
+jwk.json
+audience.json
+conf/database-setting.yml
+*.rej
+*.orig
+*.cabal

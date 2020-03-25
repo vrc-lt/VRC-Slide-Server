@@ -105,7 +105,6 @@ data AuthResult val
 startApp :: IO ()
 startApp = do
   jsonJwk <- fetchKey
-  port <- getEnv "PORT"
   allowOrigin <- BS8.pack <$> getEnv "ALLOW_ORIGIN"
   let policy = simpleCorsResourcePolicy { corsRequestHeaders = "authorization" : simpleHeaders 
                                         , corsOrigins = Just ([allowOrigin], True)
